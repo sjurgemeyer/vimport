@@ -1,35 +1,35 @@
 "Configuration options
-if !exists('g:grails_import_map_keys')
-    let g:grails_import_map_keys = 1
+if !exists('g:vimport_map_keys')
+    let g:vimport_map_keys = 1
 endif
 
-if !exists('g:grails_import_insert_shortcut')
-    let g:grails_import_insert_shortcut='<leader>i'
+if !exists('g:vimport_insert_shortcut')
+    let g:vimport_insert_shortcut='<leader>i'
 endif
 
-if !exists('g:grails_import_list_file')
+if !exists('g:vimport_list_file')
     let s:current_file=expand("<sfile>:h")
-    let g:grails_import_list_file = s:current_file . '/grailsImportList.txt'
+    let g:vimport_list_file = s:current_file . '/vimports.txt'
 endif
 
-if !exists('g:grails_import_seperators')
-    let g:grails_import_seperators = ['domain', 'services', 'groovy', 'java', 'taglib', 'controllers', 'integration', 'unit']
+if !exists('g:vimport_seperators')
+    let g:vimport_seperators = ['domain', 'services', 'groovy', 'java', 'taglib', 'controllers', 'integration', 'unit']
 endif
 
-if !exists('g:grails_import_auto_organize')
-    let g:grails_import_auto_organize = 1
+if !exists('g:vimport_auto_organize')
+    let g:vimport_auto_organize = 1
 endif
 
-if !exists('g:grails_import_auto_remove')
-    let g:grails_import_auto_remove = 1
+if !exists('g:vimport_auto_remove')
+    let g:vimport_auto_remove = 1
 endif
 
-if !exists('g:grails_import_file_extensions')
-    let g:grails_import_file_extensions = ['groovy', 'java']
+if !exists('g:vimport_file_extensions')
+    let g:vimport_file_extensions = ['groovy', 'java']
 endif
 
-if !exists('g:grails_import_search_path')
-    let g:grails_import_search_path = '.'
+if !exists('g:vimport_search_path')
+    let g:vimport_search_path = '.'
 endif
 
 "Functions
@@ -65,9 +65,9 @@ endfunction
 
 function! GetFilePathListFromFiles(classToFind)
     let filePathList = []
-    for extension in g:grails_import_file_extensions
+    for extension in g:vimport_file_extensions
         let searchString = '**/' . a:classToFind . '.' . extension
-        let paths = globpath(g:grails_import_search_path, searchString, 1)
+        let paths = globpath(g:vimport_search_path, searchString, 1)
         let multiplePaths = split(paths, '\n')
         for p in multiplePaths
             let package = GetPackageFromFile(p)
@@ -99,10 +99,10 @@ function! CreateImports(pathList)
             :execute "normal I" . formattedImport . "\<Esc>"
             :execute "normal " . (pos[1] + 1) . "G"
         endfor
-        if (g:grails_import_auto_remove)
+        if (g:vimport_auto_remove)
             :call RemoveUnneededImports()
         endif
-        if (g:grails_import_auto_organize)
+        if (g:vimport_auto_organize)
             :call OrganizeImports()
         endif
         if len(a:pathList) > 1
@@ -155,7 +155,7 @@ function! ConvertPathToPackage(filePath)
     let splitPath = split(a:filePath, '/')
 
     let idx = len(splitPath)
-    for sep in g:grails_import_seperators
+    for sep in g:vimport_seperators
         let tempIdx = index(splitPath, sep)
         if tempIdx > 0
             if tempIdx < idx
@@ -297,8 +297,8 @@ endfunction
 "Loading of imports from a file
 let s:loaded_data = []
 function! LoadImports()
-    if filereadable(g:grails_import_list_file)
-      for line in readfile(g:grails_import_list_file)
+    if filereadable(g:vimport_list_file)
+      for line in readfile(g:vimport_list_file)
         if len(line) > 0
           if line[0] != '"'
               :call add(s:loaded_data, line)
@@ -307,14 +307,14 @@ function! LoadImports()
       endfor
     endif
     if !len(s:loaded_data)
-      echo 'vim-grails-import Error: Could not read import data from '.g:grails_import_list_file
+      echo 'vimport Error: Could not read import data from '.g:vimport_list_file
     endif
 endfunction
 command! LoadImports :call LoadImports()
 :call LoadImports()
 
 "Key mappings
-if g:grails_import_map_keys
-    execute "nnoremap"  g:grails_import_insert_shortcut ":call InsertImport()<CR>"
+if g:vimport_map_keys
+    execute "nnoremap"  g:vimport_insert_shortcut ":call InsertImport()<CR>"
 endif
 
