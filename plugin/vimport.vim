@@ -7,11 +7,6 @@ if !exists('g:vimport_insert_shortcut')
     let g:vimport_insert_shortcut='<leader>i'
 endif
 
-if !exists('g:vimport_list_file')
-    let s:current_file=expand("<sfile>:h")
-    let g:vimport_list_file = s:current_file . '/vimports.txt'
-endif
-
 if !exists('g:vimport_seperators')
     let g:vimport_seperators = ['domain', 'services', 'groovy', 'java', 'taglib', 'controllers', 'integration', 'unit']
 endif
@@ -39,7 +34,6 @@ endif
 if !exists('g:vimport_filetype_import_files')
 
     let s:current_file=expand("<sfile>:h:h") . "/data"
-echom s:current_file
     let g:vimport_filetype_import_files = {
         \ 'java': [s:current_file . '/vimports_java.txt'],
         \ 'groovy': [s:current_file . '/vimports_java.txt', s:current_file . '/vimports_groovy.txt', s:current_file . '/vimports_grails.txt'],
