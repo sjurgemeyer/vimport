@@ -25,14 +25,21 @@ if !exists('g:vimport_auto_remove')
 endif
 
 if !exists('g:vimport_file_extensions')
-    let g:vimport_file_extensions = ['groovy', 'java']
+    let g:vimport_file_extensions = ['groovy', 'java', 'kt', 'kts']
 endif
 
 if !exists('g:vimport_search_path')
     let g:vimport_search_path = '.'
 endif
 
-"Functions
+if !exists('g:vimport_filetype_import_files')
+    let g:vimport_filetype_import_files = {
+		\ 'java': [g:vimport_list_file],
+		\ 'groovy': [g:vimport_list_file],
+		\ 'kotlin': [g:vimport_list_file]
+	\ }
+endif
+
 function! InsertImport()
     :let original_pos = getpos('.')
     let classToFind = expand("<cword>")
@@ -41,7 +48,7 @@ function! InsertImport()
 
     "Looking up class in text file
     if filePathList == []
-       for line in s:loaded_data
+       for line in s:vimport_import_list
            let tempClassList = split(line, '\.')
            if len(tempClassList) && tempClassList[-1] == classToFind
                 :call add(filePathList, line)
@@ -84,19 +91,9 @@ function! CreateImports(pathList)
     if a:pathList == []
         echoerr "no file found"
     else
-        let packageLine = GetPackageLineNumber(expand("%:p"))
         for pa in a:pathList
             :let pos = getpos('.')
-            let import = 'import ' . pa
-            let extension = expand("%:e")
-            if (extension == 'java')
-               let formattedImport = import . ';'
-            else
-               let formattedImport = import
-            endif
-
-            :execute "normal " . (packageLine + 1) . "Go"
-            :execute "normal I" . formattedImport . "\<Esc>"
+			:call VimportCreateImport(pa)
             :execute "normal " . (pos[1] + 1) . "G"
         endfor
         if (g:vimport_auto_remove)
@@ -112,6 +109,25 @@ function! CreateImports(pathList)
             endfor
         endif
     endif
+endfunction
+
+function! VimportCreateImport(path)
+	let import = 'import ' . a:path
+	let extension = expand("%:e")
+	if (extension == 'java')
+		let formattedImport = import . ';'
+	else
+		let formattedImport = import
+	endif
+
+	let packageLine = GetPackageLineNumber(expand("%:p"))
+	echom packageLine
+	if packageLine > -1
+		:execute "normal " . (packageLine + 1) . "Go"
+	else
+		:execute "normal gg"
+	endif
+	:execute "normal I" . formattedImport . "\<Esc>"
 endfunction
 
 function! ShouldCreateImport(path)
@@ -185,7 +201,7 @@ endfunction
 function! GetPackageLineNumber(filePath)
     let fileLines = readfile(a:filePath, '', 20) " arbitrary limit on number of lines to read
     let line = match(fileLines, "^package")
-    return line
+	return line
 endfunction
 
 command! InsertImport :call InsertImport()
@@ -194,20 +210,11 @@ map <D-i> :InsertImport <CR>
 function! OrganizeImports()
     :let pos = getpos('.')
 
-    :execute "normal gg"
-    :let start = search("^import")
-    if start == 0
-        return
-    endif
-    :let end = search("^import", 'b')
-    :let lines = sort(getline(start, end))
-
-    :execute "normal " . start . "G"
-    if end == start
-        :execute 'normal "_dd'
-    else
-        :execute 'normal "_d' . (end-start) . "j"
-    endif
+	let lines = GrabImportBlock()
+	if lines == []
+		" No imports to organize
+		return
+	endif
 
     :let currentprefix = ''
     :let currentline = ''
@@ -241,25 +248,15 @@ function! OrganizeImports()
 endfunction
 command! OrganizeImports :call OrganizeImports()
 
-function! CountOccurances(searchstring)
-    let co = []
-    :execute "normal gg"
-    while search(a:searchstring, "W") > 0
-        :call add(co, 'a')
-    endwhile
-    return len(co)
-endfunction
-
-function! RemoveUnneededImports()
-
-    :let pos = getpos('.')
+function! GrabImportBlock()
 
     :execute "normal gg"
-
     :let start = search("^import")
     :let end = search("^import", 'b')
-    :let lines = getline(start, end)
-    :let updatedLines = []
+    if start == 0
+        return []
+    endif
+    :let lines = sort(getline(start, end))
 
     :execute "normal " . start . "G"
     if end == start
@@ -267,7 +264,32 @@ function! RemoveUnneededImports()
     else
         :execute 'normal "_d' . (end-start) . "j"
     endif
+	return lines
+endfunction
 
+function! CountOccurances(searchstring)
+    let co = []
+
+    :let pos = getpos('.')
+    :execute "normal gg"
+    while search(a:searchstring, "W") > 0
+        :call add(co, 'a')
+    endwhile
+    call setpos('.', pos)
+
+    return len(co)
+endfunction
+
+function! RemoveUnneededImports()
+
+    :let pos = getpos('.')
+	let lines = GrabImportBlock()
+	if lines == []
+		" No imports to organize
+		return
+	endif
+
+    :let updatedLines = []
     for line in lines
         let trimmedLine = TrimString(line)
         if len(trimmedLine) > 0
@@ -281,7 +303,7 @@ function! RemoveUnneededImports()
             endif
         endif
     endfor
-    :execute "normal " . start . "G0"
+    ":execute "normal " . start . "G0"
     for line in updatedLines
         :execute "normal I" . line . "\<CR>"
     endfor
@@ -295,18 +317,18 @@ function! TrimString(str)
 endfunction
 
 "Loading of imports from a file
-let s:loaded_data = []
+let s:vimport_import_list = []
 function! LoadImports()
     if filereadable(g:vimport_list_file)
       for line in readfile(g:vimport_list_file)
         if len(line) > 0
           if line[0] != '"'
-              :call add(s:loaded_data, line)
+              :call add(s:vimport_import_list, line)
           endif
         endif
       endfor
     endif
-    if !len(s:loaded_data)
+    if !len(s:vimport_import_list)
       echo 'vimport Error: Could not read import data from '.g:vimport_list_file
     endif
 endfunction
@@ -317,4 +339,5 @@ command! LoadImports :call LoadImports()
 if g:vimport_map_keys
     execute "nnoremap"  g:vimport_insert_shortcut ":call InsertImport()<CR>"
 endif
+
 
