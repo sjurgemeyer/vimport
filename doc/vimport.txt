@@ -84,14 +84,21 @@ mapping for the InsertImport command
 Default: '<leader>i'
 
 ------------------------------------------------------------------------------
-g:vimport_list_file                             *vimport_list_file*
+g:vimport_filetype_import_files                             *vimport_filetype_import_files*
 
-The plugin ships with a file that contains some common classes with their
+The plugin ships with files that contain some common classes with their
 packages.  This is used to find classes that don't exist in the current
-project.  If you wish to add more classes of your own, you can copy this file
-and set the location of your custom file with this property.
+project.  This by no means coves all classes you may wish to import from external
+libraries.
 
-Default {vimport install location}/vimports.txt
+You can update this property to add additional files that contain
+lists of classes for each filetype.
+
+Default  {
+        \ 'java': [{vimport install location}/vimports_java.txt'],
+        \ 'groovy': ['{vimport install location}/vimports_java.txt', '{vimport install location}/vimports_groovy.txt', '{vimport install location}/vimports_grails.txt'],
+        \ 'kotlin': ['{vimport install location}/vimports_kotlin.txt']
+    \ }
 ------------------------------------------------------------------------------
 g:vimport_seperators                           *vimport_seperators*
 

@@ -24,7 +24,11 @@ if !exists('g:vimport_auto_remove')
     let g:vimport_auto_remove = 1
 endif
 
-if !exists('g:vimport_file_extensions')
+if !exists('s:vimport_import_lists') " filetypes mapped to files to use for class lookup
+    :let s:vimport_import_lists = {'java':[], 'groovy':[], 'kotlin':[]}
+endif
+
+if !exists('g:vimport_file_extensions') " extensions to search when looking for imports via file
     let g:vimport_file_extensions = ['groovy', 'java', 'kt', 'kts']
 endif
 
@@ -33,11 +37,14 @@ if !exists('g:vimport_search_path')
 endif
 
 if !exists('g:vimport_filetype_import_files')
+
+    let s:current_file=expand("<sfile>:h:h") . "/data"
+echom s:current_file
     let g:vimport_filetype_import_files = {
-		\ 'java': [g:vimport_list_file],
-		\ 'groovy': [g:vimport_list_file],
-		\ 'kotlin': [g:vimport_list_file]
-	\ }
+        \ 'java': [s:current_file . '/vimports_java.txt'],
+        \ 'groovy': [s:current_file . '/vimports_java.txt', s:current_file . '/vimports_groovy.txt', s:current_file . '/vimports_grails.txt'],
+        \ 'kotlin': [s:current_file . '/vimports_kotlin.txt']
+    \ }
 endif
 
 function! InsertImport()
@@ -48,7 +55,7 @@ function! InsertImport()
 
     "Looking up class in text file
     if filePathList == []
-       for line in s:vimport_import_list
+       for line in s:vimport_import_lists[&filetype]
            let tempClassList = split(line, '\.')
            if len(tempClassList) && tempClassList[-1] == classToFind
                 :call add(filePathList, line)
@@ -93,7 +100,7 @@ function! CreateImports(pathList)
     else
         for pa in a:pathList
             :let pos = getpos('.')
-			:call VimportCreateImport(pa)
+            :call VimportCreateImport(pa)
             :execute "normal " . (pos[1] + 1) . "G"
         endfor
         if (g:vimport_auto_remove)
@@ -112,22 +119,22 @@ function! CreateImports(pathList)
 endfunction
 
 function! VimportCreateImport(path)
-	let import = 'import ' . a:path
-	let extension = expand("%:e")
-	if (extension == 'java')
-		let formattedImport = import . ';'
-	else
-		let formattedImport = import
-	endif
+    let import = 'import ' . a:path
+    let extension = expand("%:e")
+    if (extension == 'java')
+        let formattedImport = import . ';'
+    else
+        let formattedImport = import
+    endif
 
-	let packageLine = GetPackageLineNumber(expand("%:p"))
-	echom packageLine
-	if packageLine > -1
-		:execute "normal " . (packageLine + 1) . "Go"
-	else
-		:execute "normal gg"
-	endif
-	:execute "normal I" . formattedImport . "\<Esc>"
+    let packageLine = GetPackageLineNumber(expand("%:p"))
+    echom packageLine
+    if packageLine > -1
+        :execute "normal " . (packageLine + 1) . "Go"
+    else
+        :execute "normal gg"
+    endif
+    :execute "normal I" . formattedImport . "\<Esc>"
 endfunction
 
 function! ShouldCreateImport(path)
@@ -201,7 +208,7 @@ endfunction
 function! GetPackageLineNumber(filePath)
     let fileLines = readfile(a:filePath, '', 20) " arbitrary limit on number of lines to read
     let line = match(fileLines, "^package")
-	return line
+    return line
 endfunction
 
 command! InsertImport :call InsertImport()
@@ -210,11 +217,11 @@ map <D-i> :InsertImport <CR>
 function! OrganizeImports()
     :let pos = getpos('.')
 
-	let lines = GrabImportBlock()
-	if lines == []
-		" No imports to organize
-		return
-	endif
+    let lines = GrabImportBlock()
+    if lines == []
+        " No imports to organize
+        return
+    endif
 
     :let currentprefix = ''
     :let currentline = ''
@@ -264,7 +271,7 @@ function! GrabImportBlock()
     else
         :execute 'normal "_d' . (end-start) . "j"
     endif
-	return lines
+    return lines
 endfunction
 
 function! CountOccurances(searchstring)
@@ -283,11 +290,11 @@ endfunction
 function! RemoveUnneededImports()
 
     :let pos = getpos('.')
-	let lines = GrabImportBlock()
-	if lines == []
-		" No imports to organize
-		return
-	endif
+    let lines = GrabImportBlock()
+    if lines == []
+        " No imports to organize
+        return
+    endif
 
     :let updatedLines = []
     for line in lines
@@ -317,23 +324,26 @@ function! TrimString(str)
 endfunction
 
 "Loading of imports from a file
-let s:vimport_import_list = []
-function! LoadImports()
-    if filereadable(g:vimport_list_file)
-      for line in readfile(g:vimport_list_file)
-        if len(line) > 0
-          if line[0] != '"'
-              :call add(s:vimport_import_list, line)
-          endif
+function! VimportLoadImports(filetype)
+    let importFiles = g:vimport_filetype_import_files[a:filetype]
+    for importFile in importFiles
+        if filereadable(importFile)
+            for line in readfile(importFile)
+                if len(line) > 0
+                    if line[0] != '"'
+                        :call add(s:vimport_import_lists[a:filetype], line)
+                    endif
+                endif
+            endfor
         endif
-      endfor
-    endif
-    if !len(s:vimport_import_list)
-      echo 'vimport Error: Could not read import data from '.g:vimport_list_file
-    endif
+    endfor
 endfunction
-command! LoadImports :call LoadImports()
-:call LoadImports()
+
+command! VimportLoadImports :call VimportLoadImports()
+
+:call VimportLoadImports('java')
+:call VimportLoadImports('groovy')
+:call VimportLoadImports('kotlin')
 
 "Key mappings
 if g:vimport_map_keys
