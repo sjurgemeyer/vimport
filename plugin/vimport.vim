@@ -1,4 +1,7 @@
 "Configuration options
+"
+let g:vimport_source_dir=expand("<sfile>:h:h")
+
 if !exists('g:vimport_map_keys')
     let g:vimport_map_keys = 1
 endif
@@ -7,9 +10,6 @@ if !exists('g:vimport_insert_shortcut')
     let g:vimport_insert_shortcut='<leader>i'
 endif
 
-if !exists('g:vimport_seperators')
-    let g:vimport_seperators = ['domain', 'services', 'groovy', 'java', 'taglib', 'controllers', 'integration', 'unit']
-endif
 
 if !exists('g:vimport_auto_organize')
     let g:vimport_auto_organize = 1
@@ -19,8 +19,8 @@ if !exists('g:vimport_auto_remove')
     let g:vimport_auto_remove = 1
 endif
 
-if !exists('s:vimport_import_lists') " filetypes mapped to files to use for class lookup
-    :let s:vimport_import_lists = {'java':[], 'groovy':[], 'kotlin':[]}
+if !exists('g:vimport_import_lists') " filetypes mapped to files to use for class lookup
+    :let g:vimport_import_lists = {'java':[], 'groovy':[], 'kotlin':[]}
 endif
 
 if !exists('g:vimport_file_extensions') " extensions to search when looking for imports via file
@@ -41,6 +41,14 @@ if !exists('g:vimport_filetype_import_files')
     \ }
 endif
 
+if !exists('g:vimport_lookup_gradle_classpath')
+    let g:vimport_lookup_gradle_classpath = 0
+endif
+
+if !exists('g:vimport_gradle_cache_file')
+    let g:vimport_gradle_cache_file = g:vimport_source_dir + '/cache/gradleClasspath'
+endif
+
 function! InsertImport()
     :let original_pos = getpos('.')
     let classToFind = expand("<cword>")
@@ -49,7 +57,7 @@ function! InsertImport()
 
     "Looking up class in text file
     if filePathList == []
-       for line in s:vimport_import_lists[&filetype]
+       for line in GetVimportFiles()
            let tempClassList = split(line, '\.')
            if len(tempClassList) && tempClassList[-1] == classToFind
                 :call add(filePathList, line)
@@ -69,6 +77,23 @@ function! InsertImport()
     let x = CreateImports(pathList)
 
     call setpos('.', original_pos)
+endfunction
+
+function! GetVimportFiles()
+    if g:vimport_lookup_gradle_classpath == 1
+        let root = VimportFindGradleRoot()
+    else
+        let root = ''
+    endif
+
+    if root != ''
+        if !has_key(g:vimport_import_lists, root)
+            call VimportLoadImportsFromGradle()
+        endif
+        return g:vimport_import_lists[root]
+    else
+        return g:vimport_import_lists[&filetype]
+    endif
 endfunction
 
 function! GetFilePathListFromFiles(classToFind)
@@ -160,30 +185,30 @@ function! GetCurrentPackage()
     return GetPackageFromFile(expand("%:p"))
 endfunction
 
-function! GetCurrentPackageFromPath()
-    return ConvertPathToPackage(expand("%:r"))
-endfunction
+"function! GetCurrentPackageFromPath()
+    "return ConvertPathToPackage(expand("%:r"))
+"endfunction
 
 function! RemoveFileFromPackage(fullpath)
     return join(split(a:fullpath,'\.')[0:-2],'.')
 endfunction
 
-function! ConvertPathToPackage(filePath)
-    let splitPath = split(a:filePath, '/')
+"function! ConvertPathToPackage(filePath)
+    "let splitPath = split(a:filePath, '/')
 
-    let idx = len(splitPath)
-    for sep in g:vimport_seperators
-        let tempIdx = index(splitPath, sep)
-        if tempIdx > 0
-            if tempIdx < idx
-                let idx = tempIdx + 1
-            endif
-        endif
-    endfor
-    let trimmedPath = splitPath[idx :-1]
+    "let idx = len(splitPath)
+    "for sep in g:vimport_seperators
+        "let tempIdx = index(splitPath, sep)
+        "if tempIdx > 0
+            "if tempIdx < idx
+                "let idx = tempIdx + 1
+            "endif
+        "endif
+    "endfor
+    "let trimmedPath = splitPath[idx :-1]
 
-    return join(split(join(trimmedPath, '.'),'\.')[0:-2], '.')
-endfunction
+    "return join(split(join(trimmedPath, '.'),'\.')[0:-2], '.')
+"endfunction
 
 function! GetPackageFromFile(filePath)
     let packageDeclaration = GetPackageLine(a:filePath)
@@ -325,12 +350,47 @@ function! VimportLoadImports(filetype)
             for line in readfile(importFile)
                 if len(line) > 0
                     if line[0] != '"'
-                        :call add(s:vimport_import_lists[a:filetype], line)
+                        :call add(g:vimport_import_lists[a:filetype], line)
                     endif
                 endif
             endfor
         endif
     endfor
+endfunction
+
+function! VimportLoadImportsFromGradle()
+    call VimportCacheGradleClasspath()
+    let root = VimportFindGradleRoot()
+    let g:vimport_import_lists[root] = []
+    for line in readfile(g:vimport_gradle_cache_file)
+        if strpart(line, strlen(line)-4) == '.jar'
+            let classListScript = g:vimport_source_dir . "/data/createClassList.py "
+            let output = system('python ' . classListScript . line )
+            for line in split(output, '\n')
+                :call add(g:vimport_import_lists[root], line)
+            endfor
+        endif
+    endfor
+endfunction
+
+function! VimportCacheGradleClasspath()
+    let root = VimportFindGradleRoot()
+    execute 'cd ' . fnameescape(root)
+    let initScript = g:vimport_source_dir . "/data/initgradle.gradle"
+    let output = system('gradle -I ' . initScript . ' -PvimportExportFile=' . g:vimport_gradle_cache_file . ' echoClasspath')
+endfunction
+
+function! VimportFindGradleRoot()
+    let root = expand('%:p')
+    let previous = ""
+    while root !=# previous
+        if filereadable(root . '/build.gradle')
+            return root
+        endif
+        let previous = root
+        let root = fnamemodify(root, ':h')
+    endwhile
+    return ''
 endfunction
 
 command! VimportLoadImports :call VimportLoadImports()

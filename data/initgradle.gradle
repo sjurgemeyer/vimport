@@ -1,0 +1,9 @@
+allprojects {
+	task echoClasspath << {
+		def file = new File(project.getProperty('vimportExportFile'))
+		file.text = ''
+		sourceSets.main.runtimeClasspath.each {
+			file << it.toString() + '\n'
+		}
+	}
+}
