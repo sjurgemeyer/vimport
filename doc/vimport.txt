@@ -100,14 +100,6 @@ Default  {
         \ 'kotlin': ['{vimport install location}/vimports_kotlin.txt']
     \ }
 ------------------------------------------------------------------------------
-g:vimport_seperators                           *vimport_seperators*
-
-The plugin currently determines the package of a class by its file path.  In
-order to do this it needs to know the source directory locations that you have
-in your project.  By default it uses common directories for grails and java.
-
-Default ['domain', 'services', 'groovy', 'java', 'taglib', 'controllers', 'integration', 'unit']
-------------------------------------------------------------------------------
 g:vimport_auto_organize                          *s_import_auto_organize*
 
 When inserting imports the plugin automatically organizes the imports based on
@@ -127,7 +119,7 @@ Default: 1
 g:vimport_file_extensions                 *vimport_file_extensions*
 The file extensions to use when searching for matching files.
 
-Default ['groovy', 'java']
+Default ['groovy', 'java', 'kt', 'kts']
 ------------------------------------------------------------------------------
 g:vimport_search_path                         *vimport_search_path*
 By default, the plugin searches the working directory when trying to find
@@ -135,6 +127,15 @@ matching files.  If you wish to set this to something else by default you can
 modify this property.
 
 Default '.'
+
+------------------------------------------------------------------------------
+g:vimport_lookup_gradle_classpath				*g:vimport_lookup_gradle_classpath*
+Enable gradle integration.  This will lookup the classpath from gradle using the
+nearest 'build.gradle' file to the current file.  The first time this is done
+in a project will be slow as vimport caches the available classes.  This overrides
+filetype import lookup
+
+Default 0
 
 ==============================================================================
 INTERNALS                                                 *vimport-internals*
