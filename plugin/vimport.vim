@@ -362,13 +362,10 @@ function! VimportLoadImportsFromGradle()
     call VimportCacheGradleClasspath()
     let root = VimportFindGradleRoot()
     let g:vimport_import_lists[root] = []
+	let pythonScript = g:vimport_source_dir . "/data/createClassList.py"
     for line in readfile(g:vimport_gradle_cache_file)
         if strpart(line, strlen(line)-4) == '.jar'
-            let classListScript = g:vimport_source_dir . "/data/createClassList.py "
-            let output = system('python ' . classListScript . line )
-            for line in split(output, '\n')
-                :call add(g:vimport_import_lists[root], line)
-            endfor
+			execute 'pyfile ' . pythonScript
         endif
     endfor
 endfunction

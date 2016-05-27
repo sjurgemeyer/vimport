@@ -2,8 +2,9 @@
 import zipfile
 import sys
 import string
+import vim
 
-zf = zipfile.ZipFile(sys.argv[1], 'r')
+zf = zipfile.ZipFile(vim.eval("line"), 'r')
 classFiles = []
 try:
     info = zf.infolist()
@@ -16,4 +17,6 @@ finally:
 
 classFiles.sort()
 for className in classFiles:
-    print string.replace(className, '/', '.')[:-6]
+    formattedName = string.replace(className, '/', '.')[:-6]
+    vim.command(':call add(g:vimport_import_lists[root], "' + formattedName + '")')
+
