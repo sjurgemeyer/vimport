@@ -1,4 +1,6 @@
-This is a plugin for vim that allows you to easily add imports within a groovy, grails or java project.
+This is a plugin for vim that allows you to easily add imports within java, groovy, grails and kotlin projects.
+
+The plugin has a few different mechanisms for finding a class's package.  It can search the current working directory, search a text file that lists the full package and classname, or use a gradle build to determine the classpath and find the classes in jar files.  Note that the gradle functionality requires VIM with python support.
 
 ## Installation ##
 
