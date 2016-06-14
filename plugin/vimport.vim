@@ -117,22 +117,30 @@ function! CreateImports(pathList)
     if a:pathList == []
         echoerr "no file found"
     else
-        for pa in a:pathList
-            :let pos = getpos('.')
-            :call VimportCreateImport(pa)
-            :execute "normal " . (pos[1] + 1) . "G"
-        endfor
+        let chosenPath = a:pathList[0]
+        if len(a:pathList) > 1
+            call inputsave()
+            let originalCmdHeight = &cmdheight
+            let &cmdheight = len(a:pathList) + 1
+            let index = 0
+            let message = ""
+            while index < len(a:pathList)
+                let message = message . "[" . index . "] " . a:pathList[index] . "\n"
+                let index += 1
+            endwhile
+            let chosenIndex = input(message . 'Which import?: ')
+            let chosenPath = a:pathList[chosenIndex]
+            let &cmdheight = originalCmdHeight
+            call inputrestore()
+        endif
+        :let pos = getpos('.')
+        :call VimportCreateImport(chosenPath)
+        :execute "normal " . (pos[1] + 1) . "G"
         if (g:vimport_auto_remove)
             :call RemoveUnneededImports()
         endif
         if (g:vimport_auto_organize)
             :call OrganizeImports()
-        endif
-        if len(a:pathList) > 1
-            echom "Warning: Multiple imports created!"
-            for pa in a:pathList
-                echom pa
-            endfor
         endif
     endif
 endfunction
@@ -147,7 +155,7 @@ function! VimportCreateImport(path)
     endif
 
     let packageLine = GetPackageLineNumber(expand("%:p"))
-    echom packageLine
+    "echom packageLine
     if packageLine > -1
         :execute "normal " . (packageLine + 1) . "Go"
     else
@@ -362,10 +370,10 @@ function! VimportLoadImportsFromGradle()
     call VimportCacheGradleClasspath()
     let root = VimportFindGradleRoot()
     let g:vimport_import_lists[root] = []
-	let pythonScript = g:vimport_source_dir . "/data/createClassList.py"
+    let pythonScript = g:vimport_source_dir . "/data/createClassList.py"
     for line in readfile(g:vimport_gradle_cache_file)
         if strpart(line, strlen(line)-4) == '.jar'
-			execute 'pyfile ' . pythonScript
+            execute 'pyfile ' . pythonScript
         endif
     endfor
 endfunction
