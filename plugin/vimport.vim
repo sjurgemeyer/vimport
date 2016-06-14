@@ -23,6 +23,9 @@ if !exists('g:vimport_import_lists') " filetypes mapped to files to use for clas
     :let g:vimport_import_lists = {'java':[], 'groovy':[], 'kotlin':[]}
 endif
 
+if !exists('g:vimport_filepath_cache') " cache of local files
+    :let g:vimport_filepath_cache = {}
+endif
 if !exists('g:vimport_file_extensions') " extensions to search when looking for imports via file
     let g:vimport_file_extensions = ['groovy', 'java', 'kt', 'kts']
 endif
@@ -53,16 +56,11 @@ function! InsertImport()
     :let original_pos = getpos('.')
     let classToFind = expand("<cword>")
 
-    let filePathList = GetFilePathListFromFiles(classToFind)
+    let filePathList = GetFilePathList(classToFind)
 
     "Looking up class in text file
     if filePathList == []
-       for line in GetVimportFiles()
-           let tempClassList = split(line, '\.')
-           if len(tempClassList) && tempClassList[-1] == classToFind
-                :call add(filePathList, line)
-           endif
-       endfor
+        let filePathList = FindFileInList(classToFind, GetVimportFiles())
     endif
 
     let pathList = []
@@ -77,6 +75,17 @@ function! InsertImport()
     let x = CreateImports(pathList)
 
     call setpos('.', original_pos)
+endfunction
+
+function! FindFileInList(className, list)
+    let filePathList = []
+    for line in a:list
+        let tempClassList = split(line, '\.')
+        if len(tempClassList) && tempClassList[-1] == a:className
+            :call add(filePathList, line)
+        endif
+    endfor
+    return filePathList
 endfunction
 
 function! GetVimportFiles()
@@ -96,6 +105,15 @@ function! GetVimportFiles()
     endif
 endfunction
 
+function! GetFilePathList(classToFind)
+    let cwd = getcwd()
+    if has_key(g:vimport_filepath_cache, cwd)
+    else
+        call RefreshFilePathListCache()
+    endif
+    return FindFileInList(a:classToFind, g:vimport_filepath_cache[cwd])
+endfunction
+
 function! GetFilePathListFromFiles(classToFind)
     let filePathList = []
     for extension in g:vimport_file_extensions
@@ -104,14 +122,38 @@ function! GetFilePathListFromFiles(classToFind)
         let multiplePaths = split(paths, '\n')
         for p in multiplePaths
             let package = GetPackageFromFile(p)
-            let fullPath =  package . '.' . a:classToFind
-            if (index(filePathList, fullPath) == -1)
-                :call add(filePathList,fullPath)
+            if package == ''
+            else
+                let fullPath =  package . '.' . a:classToFind
+                if (index(filePathList, fullPath) == -1)
+                    :call add(filePathList,fullPath)
+                endif
             endif
         endfor
     endfor
     return filePathList
 endfunction
+
+function! RefreshFilePathListCache()
+    let filePathList = []
+    for extension in g:vimport_file_extensions
+        let searchString = '**/*.' . extension
+        let paths = globpath(g:vimport_search_path, searchString, 1)
+        let multiplePaths = split(paths, '\n')
+        for p in multiplePaths
+            let package = GetPackageFromFile(p)
+            if package == ''
+            else
+				let fullPath =  package . '.' . fnamemodify(p, ":t:r")
+				:call add(filePathList,fullPath)
+			endif
+        endfor
+    endfor
+    let cwd = getcwd()
+    let g:vimport_filepath_cache[cwd] = filePathList
+    return filePathList
+endfunction
+command! RefreshFilePathList :call RefreshFilePathList()
 
 function! CreateImports(pathList)
     if a:pathList == []
@@ -220,6 +262,9 @@ endfunction
 
 function! GetPackageFromFile(filePath)
     let packageDeclaration = GetPackageLine(a:filePath)
+    if packageDeclaration == ''
+        return ''
+    endif
     let package = split(packageDeclaration, '\s')[-1]
     let package = substitute(package, ';', '', '')
     return package
@@ -229,6 +274,9 @@ endfunction
 function! GetPackageLine(filePath)
     let fileLines = readfile(a:filePath, '', 20) " arbitrary limit on number of lines to read
     let line = match(fileLines, "^package")
+    if line == -1
+        return ''
+    endif
     return fileLines[line]
 endfunction
 
