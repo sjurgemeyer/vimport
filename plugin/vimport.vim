@@ -183,6 +183,7 @@ function! CreateImports(pathList)
         endif
         if (g:vimport_auto_organize)
             :call OrganizeImports()
+            :call SpaceAfterPackage()
         endif
     endif
 endfunction
@@ -329,6 +330,29 @@ function! OrganizeImports()
     call setpos('.', pos)
 endfunction
 command! OrganizeImports :call OrganizeImports()
+
+function! SpaceAfterPackage()
+    :let pos = getpos('.')
+
+    :execute "normal gg"
+    :let packageStart = search("^package")
+    if packageStart == 0
+        return
+    endif
+
+    :let importStart = search("^import")
+    if importStart == 0
+        return
+    endif
+
+    :let expectedImportStart = (packageStart + 2)
+    if importStart != expectedImportStart
+        :execute "normal O"
+    endif
+
+    call setpos('.', pos)
+endfunction
+command! SpaceAfterPackage :call SpaceAfterPackage()
 
 function! GrabImportBlock()
 
