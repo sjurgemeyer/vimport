@@ -10,6 +10,10 @@ if !exists('g:vimport_insert_shortcut')
     let g:vimport_insert_shortcut='<leader>i'
 endif
 
+if !exists('g:vimport_gradle_reload_shortcut')
+    let g:vimport_gradle_reload_shortcut='<leader>r'
+endif
+
 
 if !exists('g:vimport_auto_organize')
     let g:vimport_auto_organize = 1
@@ -49,7 +53,7 @@ if !exists('g:vimport_lookup_gradle_classpath')
 endif
 
 if !exists('g:vimport_gradle_cache_file')
-    let g:vimport_gradle_cache_file = g:vimport_source_dir + '/cache/gradleClasspath'
+    let g:vimport_gradle_cache_file = g:vimport_source_dir . '/cache/gradleClasspath'
 endif
 
 function! InsertImport()
@@ -99,7 +103,11 @@ function! GetVimportFiles()
         if !has_key(g:vimport_import_lists, root)
             call VimportLoadImportsFromGradle()
         endif
-        return g:vimport_import_lists[root]
+        if (has_key(g:vimport_import_lists, &filetype))
+            return g:vimport_import_lists[root] + g:vimport_import_lists[&filetype]
+        else
+            return g:vimport_import_lists[root]
+        endif
     else
         return g:vimport_import_lists[&filetype]
     endif
@@ -144,16 +152,15 @@ function! RefreshFilePathListCache()
             let package = GetPackageFromFile(p)
             if package == ''
             else
-				let fullPath =  package . '.' . fnamemodify(p, ":t:r")
-				:call add(filePathList,fullPath)
-			endif
+                let fullPath =  package . '.' . fnamemodify(p, ":t:r")
+                :call add(filePathList,fullPath)
+            endif
         endfor
     endfor
     let cwd = getcwd()
     let g:vimport_filepath_cache[cwd] = filePathList
     return filePathList
 endfunction
-command! RefreshFilePathList :call RefreshFilePathList()
 
 function! CreateImports(pathList)
     if a:pathList == []
@@ -198,7 +205,6 @@ function! VimportCreateImport(path)
     endif
 
     let packageLine = GetPackageLineNumber(expand("%:p"))
-    "echom packageLine
     if packageLine > -1
         :execute "normal " . (packageLine + 1) . "Go"
     else
@@ -287,8 +293,6 @@ function! GetPackageLineNumber(filePath)
     return line
 endfunction
 
-command! InsertImport :call InsertImport()
-map <D-i> :InsertImport <CR>
 
 function! OrganizeImports()
     :let pos = getpos('.')
@@ -329,7 +333,6 @@ function! OrganizeImports()
     endfor
     call setpos('.', pos)
 endfunction
-command! OrganizeImports :call OrganizeImports()
 
 function! SpaceAfterPackage()
     :let pos = getpos('.')
@@ -416,7 +419,6 @@ function! RemoveUnneededImports()
     call setpos('.', pos)
 endfunction
 
-command! RemoveUnneededImports :call RemoveUnneededImports()
 
 function! TrimString(str)
     return substitute(a:str, '^\s*\(.\{-}\)\s*$', '\1', '')
@@ -424,6 +426,9 @@ endfunction
 
 "Loading of imports from a file
 function! VimportLoadImports(filetype)
+
+    "echo "Loading imports for " . a:filetype . "..."
+    call VimportCacheGradleClasspath()
     let importFiles = g:vimport_filetype_import_files[a:filetype]
     for importFile in importFiles
         if filereadable(importFile)
@@ -438,7 +443,10 @@ function! VimportLoadImports(filetype)
     endfor
 endfunction
 
+
 function! VimportLoadImportsFromGradle()
+
+    echo "Loading classpath from Gradle..."
     call VimportCacheGradleClasspath()
     let root = VimportFindGradleRoot()
     let g:vimport_import_lists[root] = []
@@ -470,7 +478,12 @@ function! VimportFindGradleRoot()
     return ''
 endfunction
 
-command! VimportLoadImports :call VimportLoadImports()
+command! VimportReloadImportCache :call VimportLoadImports(&filetype) "Cache imports from import files
+command! VimportReloadGradleCache :call VimportLoadImportsFromGradle() "Reload the cache from the gradle build
+command! RemoveUnneededImports :call RemoveUnneededImports() "Remove imports that aren't referenced in the file
+command! InsertImport :call InsertImport() "Insert the import under the word
+command! OrganizeImports :call OrganizeImports() "Sort the imports and put spaces between packages with different spaces
+command! SpaceAfterPackage :call SpaceAfterPackage() " Add a space after the package
 
 :call VimportLoadImports('java')
 :call VimportLoadImports('groovy')
@@ -479,6 +492,7 @@ command! VimportLoadImports :call VimportLoadImports()
 "Key mappings
 if g:vimport_map_keys
     execute "nnoremap"  g:vimport_insert_shortcut ":call InsertImport()<CR>"
+    execute "nnoremap"  g:vimport_gradle_reload_shortcut ":call VimportLoadImportsFromGradle()<CR>"
 endif
 
 
