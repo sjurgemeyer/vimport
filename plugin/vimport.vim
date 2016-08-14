@@ -114,6 +114,7 @@ function! GetVimportFiles()
 endfunction
 
 function! GetFilePathList(classToFind)
+    echo "Searching CWD for matching files..."
     let cwd = getcwd()
     if has_key(g:vimport_filepath_cache, cwd)
     else
@@ -355,7 +356,6 @@ function! SpaceAfterPackage()
 
     call setpos('.', pos)
 endfunction
-command! SpaceAfterPackage :call SpaceAfterPackage()
 
 function! GrabImportBlock()
 
@@ -428,7 +428,6 @@ endfunction
 function! VimportLoadImports(filetype)
 
     "echo "Loading imports for " . a:filetype . "..."
-    call VimportCacheGradleClasspath()
     let importFiles = g:vimport_filetype_import_files[a:filetype]
     for importFile in importFiles
         if filereadable(importFile)
@@ -446,6 +445,7 @@ endfunction
 
 function! VimportLoadImportsFromGradle()
 
+    redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
     echo "Loading classpath from Gradle..."
     call VimportCacheGradleClasspath()
     let root = VimportFindGradleRoot()
@@ -456,13 +456,21 @@ function! VimportLoadImportsFromGradle()
             execute 'pyfile ' . pythonScript
         endif
     endfor
+    redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
+    echo "Finished loading classpath from Gradle."
 endfunction
 
 function! VimportCacheGradleClasspath()
+
     let root = VimportFindGradleRoot()
-    execute 'cd ' . fnameescape(root)
-    let initScript = g:vimport_source_dir . "/data/initgradle.gradle"
-    let output = system('gradle -I ' . initScript . ' -PvimportExportFile=' . g:vimport_gradle_cache_file . ' echoClasspath')
+    if empty(root)
+    else
+        let cwd = getcwd()
+        execute 'cd ' . fnameescape(root)
+        let initScript = g:vimport_source_dir . "/data/initgradle.gradle"
+        let output = system('gradle -I ' . initScript . ' -PvimportExportFile=' . g:vimport_gradle_cache_file . ' echoClasspath')
+        execute 'cd ' . cwd
+    endif
 endfunction
 
 function! VimportFindGradleRoot()
