@@ -65,6 +65,16 @@ COMMANDS                                                   *vimport-commands*
 :RemoveUnneededImports Removes imports that do not have a class referenced
                   within the current file.  This does nothing to .* imports
 
+                                              *:VimportReloadImportCache *
+:VimportReloadImportCache Reload available imports from specified files for the
+current filetype
+
+                                              *:VimportReloadGradleCache *
+:VimportReloadGradleCache Reload available imports from Gradle
+
+
+                                              *:VimportReloadFilepathCache *
+:VimportReloadFilepathCache Reload available imports from file path
 ==============================================================================
 SETTINGS                                                *vimport-settings*
 

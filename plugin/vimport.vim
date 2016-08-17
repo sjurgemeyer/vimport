@@ -488,6 +488,8 @@ endfunction
 
 command! VimportReloadImportCache :call VimportLoadImports(&filetype) "Cache imports from import files
 command! VimportReloadGradleCache :call VimportLoadImportsFromGradle() "Reload the cache from the gradle build
+command! VimportReloadFilepathCache :call RefreshFilePathListCache()
+
 command! RemoveUnneededImports :call RemoveUnneededImports() "Remove imports that aren't referenced in the file
 command! InsertImport :call InsertImport() "Insert the import under the word
 command! OrganizeImports :call OrganizeImports() "Sort the imports and put spaces between packages with different spaces
