@@ -175,12 +175,13 @@ function! CreateImports(pathList)
             let index = 0
             let message = ""
             while index < len(a:pathList)
-                let message = message . "[" . index . "] " . a:pathList[index] . "\n"
+                let message = message . "[" . (index + 1) . "] " . a:pathList[index] . "\n"
                 let index += 1
             endwhile
             let chosenIndex = input(message . 'Which import?: ')
-            let chosenPath = a:pathList[chosenIndex]
+            let chosenPath = a:pathList[chosenIndex-1]
             let &cmdheight = originalCmdHeight
+            redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
             call inputrestore()
         endif
         :let pos = getpos('.')
