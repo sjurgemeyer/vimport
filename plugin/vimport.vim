@@ -255,7 +255,7 @@ endfunction
     "let splitPath = split(a:filePath, '/')
 
     "let idx = len(splitPath)
-    "for sep in g:vimport_seperators
+	"for sep in g:vimport_seperators
         "let tempIdx = index(splitPath, sep)
         "if tempIdx > 0
             "if tempIdx < idx
@@ -474,16 +474,20 @@ function! VimportCacheGradleClasspath()
 endfunction
 
 function! VimportFindGradleRoot()
-    let root = expand('%:p')
-    let previous = ""
-    while root !=# previous
-        if filereadable(root . '/build.gradle')
-            return root
-        endif
-        let previous = root
-        let root = fnamemodify(root, ':h')
-    endwhile
-    return ''
+	let root = expand('%:p')
+	let previous = ""
+
+	while root !=# previous
+
+		let path = globpath(root, '*.gradle', 1)
+		if path == ''
+		else
+			return fnamemodify(path, ':h')
+		endif
+		let previous = root
+		let root = fnamemodify(root, ':h')
+	endwhile
+	return ''
 endfunction
 
 command! VimportReloadImportCache :call VimportLoadImports(&filetype) "Cache imports from import files
