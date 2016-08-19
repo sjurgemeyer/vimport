@@ -243,30 +243,9 @@ function! GetCurrentPackage()
     return GetPackageFromFile(expand("%:p"))
 endfunction
 
-"function! GetCurrentPackageFromPath()
-    "return ConvertPathToPackage(expand("%:r"))
-"endfunction
-
 function! RemoveFileFromPackage(fullpath)
     return join(split(a:fullpath,'\.')[0:-2],'.')
 endfunction
-
-"function! ConvertPathToPackage(filePath)
-    "let splitPath = split(a:filePath, '/')
-
-    "let idx = len(splitPath)
-	"for sep in g:vimport_seperators
-        "let tempIdx = index(splitPath, sep)
-        "if tempIdx > 0
-            "if tempIdx < idx
-                "let idx = tempIdx + 1
-            "endif
-        "endif
-    "endfor
-    "let trimmedPath = splitPath[idx :-1]
-
-    "return join(split(join(trimmedPath, '.'),'\.')[0:-2], '.')
-"endfunction
 
 function! GetPackageFromFile(filePath)
     let packageDeclaration = GetPackageLine(a:filePath)
@@ -474,20 +453,20 @@ function! VimportCacheGradleClasspath()
 endfunction
 
 function! VimportFindGradleRoot()
-	let root = expand('%:p')
-	let previous = ""
+    let root = expand('%:p')
+    let previous = ""
 
-	while root !=# previous
+    while root !=# previous
 
-		let path = globpath(root, '*.gradle', 1)
-		if path == ''
-		else
-			return fnamemodify(path, ':h')
-		endif
-		let previous = root
-		let root = fnamemodify(root, ':h')
-	endwhile
-	return ''
+        let path = globpath(root, '*.gradle', 1)
+        if path == ''
+        else
+            return fnamemodify(path, ':h')
+        endif
+        let previous = root
+        let root = fnamemodify(root, ':h')
+    endwhile
+    return ''
 endfunction
 
 command! VimportReloadImportCache :call VimportLoadImports(&filetype) "Cache imports from import files
