@@ -13,6 +13,9 @@ endif
 if !exists('g:vimport_gradle_reload_shortcut')
     let g:vimport_gradle_reload_shortcut='<leader>r'
 endif
+if !exists('g:vimport_ignore_classnames')
+    let g:vimport_ignore_classnames={'System':'', 'Groovy':''}
+endif
 
 
 if !exists('g:vimport_auto_organize')
@@ -25,6 +28,10 @@ endif
 
 if !exists('g:vimport_import_lists') " filetypes mapped to files to use for class lookup
     :let g:vimport_import_lists = {'java':[], 'groovy':[], 'kotlin':[]}
+endif
+
+if !exists('g:vimport_import_groups')
+    :let g:vimport_import_groups = []
 endif
 
 if !exists('g:vimport_filepath_cache') " cache of local files
@@ -60,12 +67,32 @@ function! InsertImport()
     :let original_pos = getpos('.')
     let classToFind = expand("<cword>")
 
-    let filePathList = GetFilePathList(classToFind)
+    let result = InsertImportForClassName(classToFind)
 
-    "Looking up class in text file
-    if filePathList == []
-        let filePathList = FindFileInList(classToFind, GetVimportFiles())
+    if !result
+        echoerr "no file found"
+    else
+        call VimportCleanup()
     endif
+
+    call setpos('.', original_pos)
+endfunction
+
+function VimportCleanup()
+    if (g:vimport_auto_remove)
+        :call RemoveUnneededImports()
+    endif
+    if (g:vimport_auto_organize)
+        :call OrganizeImports()
+        :call SpaceAfterPackage()
+    endif
+endfunction
+
+function! InsertImportForClassName(classToFind)
+
+    let localFilePaths = GetFilePathList(a:classToFind)
+    let otherFilePaths = FindFileInList(a:classToFind, GetVimportFiles())
+    let filePathList = localFilePaths + otherFilePaths
 
     let pathList = []
     for f in filePathList
@@ -76,16 +103,21 @@ function! InsertImport()
             return
         endif
     endfor
-    let x = CreateImports(pathList)
 
-    call setpos('.', original_pos)
+    if pathList ==# []
+        return 0
+    else
+        call CreateImports(pathList)
+        return 1
+    endif
+
 endfunction
 
 function! FindFileInList(className, list)
     let filePathList = []
     for line in a:list
         let tempClassList = split(line, '\.')
-        if len(tempClassList) && tempClassList[-1] == a:className
+        if len(tempClassList) && tempClassList[-1] ==# a:className
             :call add(filePathList, line)
         endif
     endfor
@@ -93,7 +125,7 @@ function! FindFileInList(className, list)
 endfunction
 
 function! GetVimportFiles()
-    if g:vimport_lookup_gradle_classpath == 1
+    if g:vimport_lookup_gradle_classpath ==# 1
         let root = VimportFindGradleRoot()
     else
         let root = ''
@@ -131,10 +163,10 @@ function! GetFilePathListFromFiles(classToFind)
         let multiplePaths = split(paths, '\n')
         for p in multiplePaths
             let package = GetPackageFromFile(p)
-            if package == ''
+            if package ==# ''
             else
                 let fullPath =  package . '.' . a:classToFind
-                if (index(filePathList, fullPath) == -1)
+                if (index(filePathList, fullPath) ==# -1)
                     :call add(filePathList,fullPath)
                 endif
             endif
@@ -151,7 +183,7 @@ function! RefreshFilePathListCache()
         let multiplePaths = split(paths, '\n')
         for p in multiplePaths
             let package = GetPackageFromFile(p)
-            if package == ''
+            if package ==# ''
             else
                 let fullPath =  package . '.' . fnamemodify(p, ":t:r")
                 :call add(filePathList,fullPath)
@@ -164,43 +196,34 @@ function! RefreshFilePathListCache()
 endfunction
 
 function! CreateImports(pathList)
-    if a:pathList == []
-        echoerr "no file found"
-    else
-        let chosenPath = a:pathList[0]
-        if len(a:pathList) > 1
-            call inputsave()
-            let originalCmdHeight = &cmdheight
-            let &cmdheight = len(a:pathList) + 1
-            let index = 0
-            let message = ""
-            while index < len(a:pathList)
-                let message = message . "[" . (index + 1) . "] " . a:pathList[index] . "\n"
-                let index += 1
-            endwhile
-            let chosenIndex = input(message . 'Which import?: ')
-            let chosenPath = a:pathList[chosenIndex-1]
-            let &cmdheight = originalCmdHeight
-            redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
-            call inputrestore()
+    let chosenPath = a:pathList[0]
+    if len(a:pathList) > 1
+        call inputsave()
+        let originalCmdHeight = &cmdheight
+        let &cmdheight = len(a:pathList) + 1
+        let index = 0
+        let message = ""
+        while index < len(a:pathList)
+            let message = message . "[" . (index + 1) . "] " . a:pathList[index] . "\n"
+            let index += 1
+        endwhile
+        let chosenIndex = input(message . 'Which import?: ')
+        echom chosenIndex
+        if chosenIndex ==# ''
+            return
         endif
-        :let pos = getpos('.')
-        :call VimportCreateImport(chosenPath)
-        :execute "normal " . (pos[1] + 1) . "G"
-        if (g:vimport_auto_remove)
-            :call RemoveUnneededImports()
-        endif
-        if (g:vimport_auto_organize)
-            :call OrganizeImports()
-            :call SpaceAfterPackage()
-        endif
+        let chosenPath = a:pathList[chosenIndex-1]
+        let &cmdheight = originalCmdHeight
+        redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
+        call inputrestore()
     endif
+    :call VimportCreateImport(chosenPath)
 endfunction
 
 function! VimportCreateImport(path)
     let import = 'import ' . a:path
     let extension = expand("%:e")
-    if (extension == 'java')
+    if (extension ==# 'java')
         let formattedImport = import . ';'
     else
         let formattedImport = import
@@ -210,7 +233,7 @@ function! VimportCreateImport(path)
     if packageLine > -1
         :execute "normal " . (packageLine + 1) . "Go"
     else
-        :execute "normal gg"
+        :execute "normal ggo"
     endif
     :execute "normal I" . formattedImport . "\<Esc>"
 endfunction
@@ -220,20 +243,17 @@ function! ShouldCreateImport(path)
     let importPackage = RemoveFileFromPackage(a:path)
     if importPackage != ''
         if importPackage != currentpackage
-            :let starredImport = search(importPackage . "\\.\\*", 'nw')
+            :let starredImport = search(importPackage . "\\.\\*", 'nwc')
             if starredImport > 0
-                echom importPackage . '.* exists'
                 return 0
             else
-                :let existingImport = search(a:path . '\s*$', 'nw')
+                :let existingImport = search(a:path . '\s*$', 'nwc')
                 if existingImport > 0
-                    echom 'import already exists'
                     return 0
                 else
                 endif
             endif
         else
-            echom "File is in the same package"
             return 0
         endif
     endif
@@ -250,7 +270,7 @@ endfunction
 
 function! GetPackageFromFile(filePath)
     let packageDeclaration = GetPackageLine(a:filePath)
-    if packageDeclaration == ''
+    if packageDeclaration ==# ''
         return ''
     endif
     let package = split(packageDeclaration, '\s')[-1]
@@ -283,6 +303,7 @@ function! OrganizeImports()
         " No imports to organize
         return
     endif
+    let lines = SortImports(lines)
 
     :let currentprefix = ''
     :let currentline = ''
@@ -293,15 +314,15 @@ function! OrganizeImports()
 
         if len(pathList) > 1
             let newprefix = pathList[0]
-            if currentline == line
+            if currentline ==# line
             else
                 :let currentline = line
-                if currentline == ''
+                if currentline ==# ''
                 else
-                    if currentprefix == newprefix
+                    if currentprefix ==# newprefix
                     else
                         let currentprefix = newprefix
-                        if firstline == ''
+                        if firstline ==# ''
                             let firstline = line
                         else
                             :execute "normal I\<CR>"
@@ -318,13 +339,13 @@ endfunction
 function! SpaceAfterPackage()
     :let pos = getpos('.')
 
-    :execute "normal gg"
-    :let packageStart = search("^package")
+    :execute "normal gg^"
+    :let packageStart = search("^package", 'c')
     if packageStart == 0
         return
     endif
 
-    :let importStart = search("^import")
+    :let importStart = search("^import", 'c')
     if importStart == 0
         return
     endif
@@ -339,8 +360,8 @@ endfunction
 
 function! GrabImportBlock()
 
-    :execute "normal gg"
-    :let start = search("^import")
+    :execute "normal gg^"
+    :let start = search("^import", 'c')
     :let end = search("^import", 'b')
     if start == 0
         return []
@@ -360,13 +381,46 @@ function! CountOccurances(searchstring)
     let co = []
 
     :let pos = getpos('.')
-    :execute "normal gg"
+    :execute "normal gg^"
     while search(a:searchstring, "W") > 0
         :call add(co, 'a')
     endwhile
     call setpos('.', pos)
 
     return len(co)
+endfunction
+
+function! SortImports(lines)
+    let lines = sort(a:lines)
+    let importGroups = {}
+    let defaultGroup = []
+    for importGroup in g:vimport_import_groups
+        let importGroups[importGroup.name] = []
+    endfor
+
+    for line in lines
+        let pathList = split(line, '\.')
+        if len(pathList) > 0
+            let importGroupName = ''
+            for importGroup in g:vimport_import_groups
+                if pathList[0] =~ importGroup.matcher
+                    let importGroupName = importGroup.name
+                    break
+                endif
+            endfor
+            if importGroupName ==# ''
+                :call add(defaultGroup, line)
+            else
+                :call add(importGroups[importGroupName], line)
+            endif
+        endif
+    endfor
+
+    for importGroup in g:vimport_import_groups
+        let defaultGroup = defaultGroup + importGroups[importGroup.name]
+    endfor
+    return defaultGroup
+
 endfunction
 
 function! RemoveUnneededImports()
@@ -378,6 +432,7 @@ function! RemoveUnneededImports()
         return
     endif
 
+    let lines = SortImports(lines)
     :let updatedLines = []
     for line in lines
         let trimmedLine = TrimString(line)
@@ -387,12 +442,11 @@ function! RemoveUnneededImports()
             let tempString = substitute(line, '\s', '\.', 'g')
             let classname = substitute(split(tempString, '\.')[-1], ';', '', '')
             " echoerr classname . " " . CountOccurances(classname)
-            if classname == "*" || CountOccurances(classname) > 0
+            if classname ==# "*" || CountOccurances(classname) > 0
                 :call add(updatedLines, substitute(line, '^\(\s\*\)','',''))
             endif
         endif
     endfor
-    ":execute "normal " . start . "G0"
     for line in updatedLines
         :execute "normal I" . line . "\<CR>"
     endfor
@@ -432,7 +486,7 @@ function! VimportLoadImportsFromGradle()
     let g:vimport_import_lists[root] = []
     let pythonScript = g:vimport_source_dir . "/data/createClassList.py"
     for line in readfile(g:vimport_gradle_cache_file)
-        if strpart(line, strlen(line)-4) == '.jar'
+        if strpart(line, strlen(line)-4) ==# '.jar'
             execute 'pyfile ' . pythonScript
         endif
     endfor
@@ -460,7 +514,7 @@ function! VimportFindGradleRoot()
     while root !=# previous
 
         let path = globpath(root, '*.gradle', 1)
-        if path == ''
+        if path ==# ''
         else
             return fnamemodify(path, ':h')
         endif
@@ -470,9 +524,33 @@ function! VimportFindGradleRoot()
     return ''
 endfunction
 
+let s:classNames = []
+function! AddToMatches(str)
+    call add(s:classNames, a:str)
+endfunction
+
+function! VimportImportAll()
+
+    :let start = search("^import", 'b') + 1 "Don't search the imports for class names
+
+    :execute ":keeppatterns " . start . ",$s/\\v[^a-z](([A-Z]+[a-z0-9]+)+)/\\=AddToMatches(submatch(1))/gn"
+
+    let list = s:classNames
+    let list=filter(copy(list), 'index(list, v:val, v:key+1)==-1')
+
+    for item in list
+        call InsertImportForClassName(item)
+    endfor
+
+    call VimportCleanup()
+    echo "Done with import all"
+
+endfunction
+
 command! VimportReloadImportCache :call VimportLoadImports(&filetype) "Cache imports from import files
 command! VimportReloadGradleCache :call VimportLoadImportsFromGradle() "Reload the cache from the gradle build
-command! VimportReloadFilepathCache :call RefreshFilePathListCache()
+command! VimportReloadFilepathCache :call RefreshFilePathListCache() "Reload the cache from local file system
+command! VimportImportAll :call VimportImportAll() "Search the file for class names and run InsertImport on each one
 
 command! RemoveUnneededImports :call RemoveUnneededImports() "Remove imports that aren't referenced in the file
 command! InsertImport :call InsertImport() "Insert the import under the word
@@ -485,8 +563,6 @@ command! SpaceAfterPackage :call SpaceAfterPackage() " Add a space after the pac
 
 "Key mappings
 if g:vimport_map_keys
-    execute "nnoremap"  g:vimport_insert_shortcut ":call InsertImport()<CR>"
-    execute "nnoremap"  g:vimport_gradle_reload_shortcut ":call VimportLoadImportsFromGradle()<CR>"
+    execute "nnoremap" g:vimport_insert_shortcut ":call InsertImport()<CR>"
+    execute "nnoremap" g:vimport_gradle_reload_shortcut ":call VimportLoadImportsFromGradle()<CR>"
 endif
-
-

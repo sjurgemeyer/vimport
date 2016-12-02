@@ -130,6 +130,32 @@ g:vimport_file_extensions                 *vimport_file_extensions*
 The file extensions to use when searching for matching files.
 
 Default ['groovy', 'java', 'kt', 'kts']
+
+------------------------------------------------------------------------------
+g:vimport_import_groups                         *vimport_import_groups
+By default, vimport will sort packages alphabetically and create a line break
+every time the first level of the package changes.  If you wish to have groups
+that are sorted differently, you can define groups and put them in the desired
+order.
+
+e.g.
+let g:vimport_import_groups = [
+        \ {
+            \ 'name' : 'java',
+            \ 'matcher' : 'import java'
+        \ },
+        \ {
+            \ 'name' : 'static',
+            \ 'matcher' : 'import static .*'
+        \ },
+    ]
+
+This example will put items that match "import java" after all unmatched items,
+followed by all items that match "import static".  Be aware that currently the
+matcher provided will be compared to the first section of the path before the '.'
+
+
+Default ['groovy', 'java', 'kt', 'kts']
 ------------------------------------------------------------------------------
 g:vimport_search_path                         *vimport_search_path*
 By default, the plugin searches the working directory when trying to find
