@@ -17,7 +17,6 @@ if !exists('g:vimport_ignore_classnames')
     let g:vimport_ignore_classnames={'System':'', 'Groovy':''}
 endif
 
-
 if !exists('g:vimport_auto_organize')
     let g:vimport_auto_organize = 1
 endif
@@ -27,15 +26,15 @@ if !exists('g:vimport_auto_remove')
 endif
 
 if !exists('g:vimport_import_lists') " filetypes mapped to files to use for class lookup
-    :let g:vimport_import_lists = {'java':[], 'groovy':[], 'kotlin':[]}
+    let g:vimport_import_lists = {'java':[], 'groovy':[], 'kotlin':[]}
 endif
 
 if !exists('g:vimport_import_groups')
-    :let g:vimport_import_groups = []
+    let g:vimport_import_groups = []
 endif
 
 if !exists('g:vimport_filepath_cache') " cache of local files
-    :let g:vimport_filepath_cache = {}
+    let g:vimport_filepath_cache = {}
 endif
 if !exists('g:vimport_file_extensions') " extensions to search when looking for imports via file
     let g:vimport_file_extensions = ['groovy', 'java', 'kt', 'kts']
@@ -64,13 +63,13 @@ if !exists('g:vimport_gradle_cache_file')
 endif
 
 function! InsertImport()
-    :let original_pos = getpos('.')
+    let original_pos = getpos('.')
     let classToFind = expand("<cword>")
 
     let result = InsertImportForClassName(classToFind)
 
     if !result
-        echoerr "no file found"
+        echoerr "no import was found"
     else
         call VimportCleanup()
     endif
@@ -80,11 +79,11 @@ endfunction
 
 function VimportCleanup()
     if (g:vimport_auto_remove)
-        :call RemoveUnneededImports()
+        call RemoveUnneededImports()
     endif
     if (g:vimport_auto_organize)
-        :call OrganizeImports()
-        :call SpaceAfterPackage()
+        call OrganizeImports()
+        call SpaceAfterPackage()
     endif
 endfunction
 
@@ -98,7 +97,7 @@ function! InsertImportForClassName(classToFind)
     for f in filePathList
         let shouldCreateImport = ShouldCreateImport(f)
         if (shouldCreateImport)
-            :call add(pathList, f)
+            call add(pathList, f)
         else
             return
         endif
@@ -118,7 +117,7 @@ function! FindFileInList(className, list)
     for line in a:list
         let tempClassList = split(line, '\.')
         if len(tempClassList) && tempClassList[-1] ==# a:className
-            :call add(filePathList, line)
+            call add(filePathList, line)
         endif
     endfor
     return filePathList
@@ -135,7 +134,7 @@ function! GetVimportFiles()
         if !has_key(g:vimport_import_lists, root)
             call VimportLoadImportsFromGradle()
         endif
-        if (has_key(g:vimport_import_lists, &filetype))
+        if has_key(g:vimport_import_lists, &filetype)
             return g:vimport_import_lists[root] + g:vimport_import_lists[&filetype]
         else
             return g:vimport_import_lists[root]
@@ -148,8 +147,7 @@ endfunction
 function! GetFilePathList(classToFind)
     echo "Searching CWD for matching files..."
     let cwd = getcwd()
-    if has_key(g:vimport_filepath_cache, cwd)
-    else
+    if !has_key(g:vimport_filepath_cache, cwd)
         call RefreshFilePathListCache()
     endif
     return FindFileInList(a:classToFind, g:vimport_filepath_cache[cwd])
@@ -163,11 +161,10 @@ function! GetFilePathListFromFiles(classToFind)
         let multiplePaths = split(paths, '\n')
         for p in multiplePaths
             let package = GetPackageFromFile(p)
-            if package ==# ''
-            else
+            if package !=# ''
                 let fullPath =  package . '.' . a:classToFind
                 if (index(filePathList, fullPath) ==# -1)
-                    :call add(filePathList,fullPath)
+                    call add(filePathList,fullPath)
                 endif
             endif
         endfor
@@ -183,10 +180,9 @@ function! RefreshFilePathListCache()
         let multiplePaths = split(paths, '\n')
         for p in multiplePaths
             let package = GetPackageFromFile(p)
-            if package ==# ''
-            else
+            if package !=# ''
                 let fullPath =  package . '.' . fnamemodify(p, ":t:r")
-                :call add(filePathList,fullPath)
+                call add(filePathList,fullPath)
             endif
         endfor
     endfor
@@ -217,7 +213,7 @@ function! CreateImports(pathList)
         redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
         call inputrestore()
     endif
-    :call VimportCreateImport(chosenPath)
+    call VimportCreateImport(chosenPath)
 endfunction
 
 function! VimportCreateImport(path)
@@ -231,11 +227,11 @@ function! VimportCreateImport(path)
 
     let packageLine = GetPackageLineNumber(expand("%:p"))
     if packageLine > -1
-        :execute "normal " . (packageLine + 1) . "Go"
+        execute "normal " . (packageLine + 1) . "Go"
     else
-        :execute "normal ggo"
+        execute "normal ggo"
     endif
-    :execute "normal I" . formattedImport . "\<Esc>"
+    execute "normal I" . formattedImport . "\<Esc>"
 endfunction
 
 function! ShouldCreateImport(path)
@@ -243,14 +239,13 @@ function! ShouldCreateImport(path)
     let importPackage = RemoveFileFromPackage(a:path)
     if importPackage != ''
         if importPackage != currentpackage
-            :let starredImport = search(importPackage . "\\.\\*", 'nwc')
+            let starredImport = search(importPackage . "\\.\\*", 'nwc')
             if starredImport > 0
                 return 0
             else
-                :let existingImport = search(a:path . '\s*$', 'nwc')
+                let existingImport = search(a:path . '\s*$', 'nwc')
                 if existingImport > 0
                     return 0
-                else
                 endif
             endif
         else
@@ -296,7 +291,7 @@ endfunction
 
 
 function! OrganizeImports()
-    :let pos = getpos('.')
+    let pos = getpos('.')
 
     let lines = GrabImportBlock()
     if lines == []
@@ -305,30 +300,27 @@ function! OrganizeImports()
     endif
     let lines = SortImports(lines)
 
-    :let currentprefix = ''
-    :let currentline = ''
-    :let firstline = ''
+    let currentprefix = ''
+    let currentline = ''
+    let firstline = ''
 
     for line in lines
         let pathList = split(line, '\.')
 
         if len(pathList) > 1
             let newprefix = pathList[0]
-            if currentline ==# line
-            else
-                :let currentline = line
-                if currentline ==# ''
-                else
-                    if currentprefix ==# newprefix
-                    else
+            if currentline !=# line
+                let currentline = line
+                if currentline !=# ''
+                    if currentprefix !=# newprefix
                         let currentprefix = newprefix
                         if firstline ==# ''
                             let firstline = line
                         else
-                            :execute "normal I\<CR>"
+                            execute "normal I\<CR>"
                         endif
                     endif
-                    :execute "normal I" . line . "\<CR>"
+                    execute "normal I" . line . "\<CR>"
                 endif
             endif
         endif
@@ -337,22 +329,22 @@ function! OrganizeImports()
 endfunction
 
 function! SpaceAfterPackage()
-    :let pos = getpos('.')
+    let pos = getpos('.')
 
-    :execute "normal gg^"
-    :let packageStart = search("^package", 'c')
+    execute "normal gg^"
+    let packageStart = search("^package", 'c')
     if packageStart == 0
         return
     endif
 
-    :let importStart = search("^import", 'c')
+    let importStart = search("^import", 'c')
     if importStart == 0
         return
     endif
 
-    :let expectedImportStart = (packageStart + 2)
+    let expectedImportStart = (packageStart + 2)
     if importStart != expectedImportStart
-        :execute "normal O"
+        execute "normal O"
     endif
 
     call setpos('.', pos)
@@ -360,19 +352,19 @@ endfunction
 
 function! GrabImportBlock()
 
-    :execute "normal gg^"
-    :let start = search("^import", 'c')
-    :let end = search("^import", 'b')
+    execute "normal gg^"
+    let start = search("^import", 'c')
+    let end = search("^import", 'b')
     if start == 0
         return []
     endif
-    :let lines = sort(getline(start, end))
+    let lines = sort(getline(start, end))
 
-    :execute "normal " . start . "G"
+    execute "normal " . start . "G"
     if end == start
-        :execute 'normal "_dd'
+        execute 'normal "_dd'
     else
-        :execute 'normal "_d' . (end-start) . "j"
+        execute 'normal "_d' . (end-start) . "j"
     endif
     return lines
 endfunction
@@ -380,10 +372,10 @@ endfunction
 function! CountOccurances(searchstring)
     let co = []
 
-    :let pos = getpos('.')
-    :execute "normal gg^"
+    let pos = getpos('.')
+    execute "normal gg^"
     while search(a:searchstring, "W") > 0
-        :call add(co, 'a')
+        call add(co, 'a')
     endwhile
     call setpos('.', pos)
 
@@ -399,19 +391,19 @@ function! SortImports(lines)
     endfor
 
     for line in lines
-        let pathList = split(line, '\.')
-        if len(pathList) > 0
+        let trimmedLine = TrimString(line)
+        if len(trimmedLine) > 0
             let importGroupName = ''
             for importGroup in g:vimport_import_groups
-                if pathList[0] =~ importGroup.matcher
+                if trimmedLine =~ importGroup.matcher
                     let importGroupName = importGroup.name
                     break
                 endif
             endfor
             if importGroupName ==# ''
-                :call add(defaultGroup, line)
+                call add(defaultGroup, trimmedLine)
             else
-                :call add(importGroups[importGroupName], line)
+                call add(importGroups[importGroupName], trimmedLine)
             endif
         endif
     endfor
@@ -425,7 +417,7 @@ endfunction
 
 function! RemoveUnneededImports()
 
-    :let pos = getpos('.')
+    let pos = getpos('.')
     let lines = GrabImportBlock()
     if lines == []
         " No imports to organize
@@ -433,8 +425,19 @@ function! RemoveUnneededImports()
     endif
 
     let lines = SortImports(lines)
-    :let updatedLines = []
-    for line in lines
+
+    let updatedLines = RemoveUnneededImportsFromList(lines)
+
+    for line in updatedLines
+        execute "normal I" . line . "\<CR>"
+    endfor
+
+    call setpos('.', pos)
+endfunction
+
+function! RemoveUnneededImportsFromList(lines)
+    let updatedLines = []
+    for line in a:lines
         let trimmedLine = TrimString(line)
         if len(trimmedLine) > 0
             " Also split on spaces for things like
@@ -443,14 +446,11 @@ function! RemoveUnneededImports()
             let classname = substitute(split(tempString, '\.')[-1], ';', '', '')
             " echoerr classname . " " . CountOccurances(classname)
             if classname ==# "*" || CountOccurances(classname) > 0
-                :call add(updatedLines, substitute(line, '^\(\s\*\)','',''))
+                call add(updatedLines, substitute(line, '^\(\s\*\)','',''))
             endif
         endif
     endfor
-    for line in updatedLines
-        :execute "normal I" . line . "\<CR>"
-    endfor
-    call setpos('.', pos)
+	return updatedLines
 endfunction
 
 
@@ -468,7 +468,7 @@ function! VimportLoadImports(filetype)
             for line in readfile(importFile)
                 if len(line) > 0
                     if line[0] != '"'
-                        :call add(g:vimport_import_lists[a:filetype], line)
+                        call add(g:vimport_import_lists[a:filetype], line)
                     endif
                 endif
             endfor
@@ -497,8 +497,7 @@ endfunction
 function! VimportCacheGradleClasspath()
 
     let root = VimportFindGradleRoot()
-    if empty(root)
-    else
+    if !empty(root)
         let cwd = getcwd()
         execute 'cd ' . fnameescape(root)
         let initScript = g:vimport_source_dir . "/data/initgradle.gradle"
@@ -514,8 +513,7 @@ function! VimportFindGradleRoot()
     while root !=# previous
 
         let path = globpath(root, '*.gradle', 1)
-        if path ==# ''
-        else
+        if path !=# ''
             return fnamemodify(path, ':h')
         endif
         let previous = root
@@ -531,9 +529,9 @@ endfunction
 
 function! VimportImportAll()
 
-    :let start = search("^import", 'b') + 1 "Don't search the imports for class names
+    let start = search("^import", 'b') + 1 "Don't search the imports for class names
 
-    :execute ":keeppatterns " . start . ",$s/\\v[^a-z](([A-Z]+[a-z0-9]+)+)/\\=AddToMatches(submatch(1))/gn"
+    execute ":keeppatterns " . start . ",$s/\\v[^a-z](([A-Z]+[a-z0-9]+)+)/\\=AddToMatches(submatch(1))/gn"
 
     let list = s:classNames
     let list=filter(copy(list), 'index(list, v:val, v:key+1)==-1')
@@ -557,9 +555,9 @@ command! InsertImport :call InsertImport() "Insert the import under the word
 command! OrganizeImports :call OrganizeImports() "Sort the imports and put spaces between packages with different spaces
 command! SpaceAfterPackage :call SpaceAfterPackage() " Add a space after the package
 
-:call VimportLoadImports('java')
-:call VimportLoadImports('groovy')
-:call VimportLoadImports('kotlin')
+call VimportLoadImports('java')
+call VimportLoadImports('groovy')
+call VimportLoadImports('kotlin')
 
 "Key mappings
 if g:vimport_map_keys

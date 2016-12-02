@@ -151,9 +151,7 @@ let g:vimport_import_groups = [
     ]
 
 This example will put items that match "import java" after all unmatched items,
-followed by all items that match "import static".  Be aware that currently the
-matcher provided will be compared to the first section of the path before the '.'
-
+followed by all items that match "import static".
 
 Default ['groovy', 'java', 'kt', 'kts']
 ------------------------------------------------------------------------------
