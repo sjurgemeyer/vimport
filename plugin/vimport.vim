@@ -14,10 +14,7 @@ if !exists('g:vimport_gradle_reload_shortcut')
     let g:vimport_gradle_reload_shortcut='<leader>r'
 endif
 if !exists('g:vimport_ignore_classnames')
-    let g:vimport_ignore_classnames={
-        \ 'java' : { 'AbstractMethodError':'', 'AbstractStringBuilder':'', 'Appendable':'', 'ApplicationShutdownHooks':'', 'ArithmeticException':'', 'ArrayIndexOutOfBoundsException':'', 'ArrayStoreException':'', 'AssertionError':'', 'AssertionStatusDirectives':'', 'AutoCloseable':'', 'Boolean':'', 'BootstrapMethodError':'', 'Byte':'', 'CharSequence':'', 'Character':'', 'CharacterData':'', 'CharacterData00':'', 'CharacterData01':'', 'CharacterData02':'', 'CharacterData0E':'', 'CharacterDataLatin1':'', 'CharacterDataPrivateUse':'', 'CharacterDataUndefined':'', 'CharacterName':'', 'Class':'', 'ClassCastException':'', 'ClassCircularityError':'', 'ClassFormatError':'', 'ClassLoader':'', 'ClassLoaderHelper':'', 'ClassNotFoundException':'', 'ClassValue':'', 'CloneNotSupportedException':'', 'Cloneable':'', 'Comparable':'', 'Compiler':'', 'ConditionalSpecialCasing':'', 'Deprecated':'', 'Double':'', 'Enum':'', 'EnumConstantNotPresentException':'', 'Error':'', 'Exception':'', 'ExceptionInInitializerError':'', 'Float':'', 'FunctionalInterface':'', 'IllegalAccessError':'', 'IllegalAccessException':'', 'IllegalArgumentException':'', 'IllegalMonitorStateException':'', 'IllegalStateException':'', 'IllegalThreadStateException':'', 'IncompatibleClassChangeError':'', 'IndexOutOfBoundsException':'', 'InheritableThreadLocal':'', 'InstantiationError':'', 'InstantiationException':'', 'Integer':'', 'InternalError':'', 'InterruptedException':'', 'Iterable':'', 'LinkageError':'', 'Long':'', 'Math':'', 'NegativeArraySizeException':'', 'NoClassDefFoundError':'', 'NoSuchFieldError':'', 'NoSuchFieldException':'', 'NoSuchMethodError':'', 'NoSuchMethodException':'', 'NullPointerException':'', 'Number':'', 'NumberFormatException':'', 'Object':'', 'OutOfMemoryError':'', 'Override':'', 'Package':'', 'Process':'', 'ProcessBuilder':'', 'ProcessEnvironment':'', 'ProcessImpl':'', 'Readable':'', 'ReflectiveOperationException':'', 'Runnable':'', 'Runtime':'', 'RuntimeException':'', 'RuntimePermission':'', 'SafeVarargs':'', 'SecurityException':'', 'SecurityManager':'', 'Short':'', 'Shutdown':'', 'StackOverflowError':'', 'StackTraceElement':'', 'StrictMath':'', 'String':'', 'StringBuffer':'', 'StringBuilder':'', 'StringCoding':'', 'StringIndexOutOfBoundsException':'', 'SuppressWarnings':'', 'System':'', 'SystemClassLoaderAction':'', 'Terminator':'', 'Thread':'', 'ThreadDeath':'', 'ThreadGroup':'', 'ThreadLocal':'', 'Throwable':'', 'TypeNotPresentException':'', 'UNIXProcess':'', 'UnknownError':'', 'UnsatisfiedLinkError':'', 'UnsupportedClassVersionError':'', 'UnsupportedOperationException':'', 'VerifyError':'', 'VirtualMachineError':'', 'Void':'' },
-        \ 'groovy' : { 'AbstractMethodError':'', 'AbstractStringBuilder':'', 'Appendable':'', 'ApplicationShutdownHooks':'', 'ArithmeticException':'', 'ArrayIndexOutOfBoundsException':'', 'ArrayStoreException':'', 'AssertionError':'', 'AssertionStatusDirectives':'', 'AutoCloseable':'', 'Boolean':'', 'BootstrapMethodError':'', 'Byte':'', 'CharSequence':'', 'Character':'', 'CharacterData':'', 'CharacterData00':'', 'CharacterData01':'', 'CharacterData02':'', 'CharacterData0E':'', 'CharacterDataLatin1':'', 'CharacterDataPrivateUse':'', 'CharacterDataUndefined':'', 'CharacterName':'', 'Class':'', 'ClassCastException':'', 'ClassCircularityError':'', 'ClassFormatError':'', 'ClassLoader':'', 'ClassLoaderHelper':'', 'ClassNotFoundException':'', 'ClassValue':'', 'CloneNotSupportedException':'', 'Cloneable':'', 'Comparable':'', 'Compiler':'', 'ConditionalSpecialCasing':'', 'Deprecated':'', 'Double':'', 'Enum':'', 'EnumConstantNotPresentException':'', 'Error':'', 'Exception':'', 'ExceptionInInitializerError':'', 'Float':'', 'FunctionalInterface':'', 'IllegalAccessError':'', 'IllegalAccessException':'', 'IllegalArgumentException':'', 'IllegalMonitorStateException':'', 'IllegalStateException':'', 'IllegalThreadStateException':'', 'IncompatibleClassChangeError':'', 'IndexOutOfBoundsException':'', 'InheritableThreadLocal':'', 'InstantiationError':'', 'InstantiationException':'', 'Integer':'', 'InternalError':'', 'InterruptedException':'', 'Iterable':'', 'LinkageError':'', 'Long':'', 'Math':'', 'NegativeArraySizeException':'', 'NoClassDefFoundError':'', 'NoSuchFieldError':'', 'NoSuchFieldException':'', 'NoSuchMethodError':'', 'NoSuchMethodException':'', 'NullPointerException':'', 'Number':'', 'NumberFormatException':'', 'Object':'', 'OutOfMemoryError':'', 'Override':'', 'Package':'', 'Process':'', 'ProcessBuilder':'', 'ProcessEnvironment':'', 'ProcessImpl':'', 'Readable':'', 'ReflectiveOperationException':'', 'Runnable':'', 'Runtime':'', 'RuntimeException':'', 'RuntimePermission':'', 'SafeVarargs':'', 'SecurityException':'', 'SecurityManager':'', 'Short':'', 'Shutdown':'', 'StackOverflowError':'', 'StackTraceElement':'', 'StrictMath':'', 'String':'', 'StringBuffer':'', 'StringBuilder':'', 'StringCoding':'', 'StringIndexOutOfBoundsException':'', 'SuppressWarnings':'', 'System':'', 'SystemClassLoaderAction':'', 'Terminator':'', 'Thread':'', 'ThreadDeath':'', 'ThreadGroup':'', 'ThreadLocal':'', 'Throwable':'', 'TypeNotPresentException':'', 'UNIXProcess':'', 'UnknownError':'', 'UnsatisfiedLinkError':'', 'UnsupportedClassVersionError':'', 'UnsupportedOperationException':'', 'VerifyError':'', 'VirtualMachineError':'', 'Void' :'', 'BigDecimal':'', 'BigInteger':'', 'Bits':'', 'BufferedInputStream':'', 'BufferedOutputStream':'', 'BufferedReader':'', 'BufferedWriter':'', 'ByteArrayInputStream':'', 'ByteArrayOutputStream':'', 'CharArrayReader':'', 'CharArrayWriter':'', 'CharConversionException':'', 'Closeable':'', 'Console':'', 'DataInput':'', 'DataInputStream':'', 'DataOutput':'', 'DataOutputStream':'', 'DefaultFileSystem':'', 'DeleteOnExitHook':'', 'EOFException':'', 'ExpiringCache':'', 'Externalizable':'', 'File':'', 'FileDescriptor':'', 'FileFilter':'', 'FileInputStream':'', 'FileNotFoundException':'', 'FileOutputStream':'', 'FilePermission':'', 'FilePermissionCollection':'', 'FileReader':'', 'FileSystem':'', 'FileWriter':'', 'FilenameFilter':'', 'FilterInputStream':'', 'FilterOutputStream':'', 'FilterReader':'', 'FilterWriter':'', 'Flushable':'', 'IOError':'', 'IOException':'', 'InputStream':'', 'InputStreamReader':'', 'InterruptedIOException':'', 'InvalidClassException':'', 'InvalidObjectException':'', 'LineNumberInputStream':'', 'LineNumberReader':'', 'NotActiveException':'', 'NotSerializableException':'', 'ObjectInput':'', 'ObjectInputStream':'', 'ObjectInputValidation':'', 'ObjectOutput':'', 'ObjectOutputStream':'', 'ObjectStreamClass':'', 'ObjectStreamConstants':'', 'ObjectStreamException':'', 'ObjectStreamField':'', 'OptionalDataException':'', 'OutputStream':'', 'OutputStreamWriter':'', 'PipedInputStream':'', 'PipedOutputStream':'', 'PipedReader':'', 'PipedWriter':'', 'PrintStream':'', 'PrintWriter':'', 'PushbackInputStream':'', 'PushbackReader':'', 'RandomAccessFile':'', 'Reader':'', 'SequenceInputStream':'', 'SerialCallbackContext':'', 'Serializable':'', 'SerializablePermission':'', 'StreamCorruptedException':'', 'StreamTokenizer':'', 'StringBufferInputStream':'', 'StringReader':'', 'StringWriter':'', 'SyncFailedException':'', 'UTFDataFormatException':'', 'UncheckedIOException':'', 'UnixFileSystem':'', 'UnsupportedEncodingException':'', 'WriteAbortedException':'', 'Writer':'', 'AbstractPlainDatagramSocketImpl':'', 'AbstractPlainSocketImpl':'', 'Authenticator':'', 'BindException':'', 'CacheRequest':'', 'CacheResponse':'', 'ConnectException':'', 'ContentHandler':'', 'ContentHandlerFactory':'', 'CookieHandler':'', 'CookieManager':'', 'CookiePolicy':'', 'CookieStore':'', 'DatagramPacket':'', 'DatagramSocket':'', 'DatagramSocketImpl':'', 'DatagramSocketImplFactory':'', 'DefaultDatagramSocketImplFactory':'', 'DefaultInterface':'', 'FactoryURLClassLoader':'', 'FileNameMap':'', 'HostPortrange':'', 'HttpConnectSocketImpl':'', 'HttpCookie':'', 'HttpRetryException':'', 'HttpURLConnection':'', 'IDN':'', 'InMemoryCookieStore':'', 'Inet4Address':'', 'Inet4AddressImpl':'', 'Inet6Address':'', 'Inet6AddressImpl':'', 'InetAddress':'', 'InetAddressContainer':'', 'InetAddressImpl':'', 'InetAddressImplFactory':'', 'InetSocketAddress':'', 'InterfaceAddress':'', 'JarURLConnection':'', 'MalformedURLException':'', 'MulticastSocket':'', 'NetPermission':'', 'NetworkInterface':'', 'NoRouteToHostException':'', 'Parts':'', 'PasswordAuthentication':'', 'PlainDatagramSocketImpl':'', 'PlainSocketImpl':'', 'PortUnreachableException':'', 'ProtocolException':'', 'ProtocolFamily':'', 'Proxy':'', 'ProxySelector':'', 'ResponseCache':'', 'SdpSocketImpl':'', 'SecureCacheResponse':'', 'ServerSocket':'', 'Socket':'', 'SocketAddress':'', 'SocketException':'', 'SocketImpl':'', 'SocketImplFactory':'', 'SocketInputStream':'', 'SocketOption':'', 'SocketOptions':'', 'SocketOutputStream':'', 'SocketPermission':'', 'SocketPermissionCollection':'', 'SocketSecrets':'', 'SocketTimeoutException':'', 'SocksConsts':'', 'SocksSocketImpl':'', 'StandardProtocolFamily':'', 'StandardSocketOptions':'', 'URI':'', 'URISyntaxException':'', 'URL':'', 'URLClassLoader':'', 'URLConnection':'', 'URLDecoder':'', 'URLEncoder':'', 'URLPermission':'', 'URLStreamHandler':'', 'URLStreamHandlerFactory':'', 'UnknownContentHandler':'', 'UnknownHostException':'', 'UnknownServiceException':'', 'AbstractCollection':'', 'AbstractList':'', 'AbstractMap':'', 'AbstractQueue':'', 'AbstractSequentialList':'', 'AbstractSet':'', 'ArrayDeque':'', 'ArrayList':'', 'ArrayPrefixHelpers':'', 'Arrays':'', 'ArraysParallelSortHelpers':'', 'Base64':'', 'BitSet':'', 'Calendar':'', 'Collection':'', 'Collections':'', 'ComparableTimSort':'', 'Comparator':'', 'Comparators':'', 'ConcurrentModificationException':'', 'Currency':'', 'Date':'', 'Deque':'', 'Dictionary':'', 'DoubleSummaryStatistics':'', 'DualPivotQuicksort':'', 'DuplicateFormatFlagsException':'', 'EmptyStackException':'', 'EnumMap':'', 'EnumSet':'', 'Enumeration':'', 'EventListener':'', 'EventListenerProxy':'', 'EventObject':'', 'FormatFlagsConversionMismatchException':'', 'Formattable':'', 'FormattableFlags':'', 'Formatter':'', 'FormatterClosedException':'', 'GregorianCalendar':'', 'HashMap':'', 'HashSet':'', 'Hashtable':'', 'IdentityHashMap':'', 'IllegalFormatCodePointException':'', 'IllegalFormatConversionException':'', 'IllegalFormatException':'', 'IllegalFormatFlagsException':'', 'IllegalFormatPrecisionException':'', 'IllegalFormatWidthException':'', 'IllformedLocaleException':'', 'InputMismatchException':'', 'IntSummaryStatistics':'', 'InvalidPropertiesFormatException':'', 'Iterator':'', 'JapaneseImperialCalendar':'', 'JumboEnumSet':'', 'LinkedHashMap':'', 'LinkedHashSet':'', 'LinkedList':'', 'List':'', 'ListIterator':'', 'ListResourceBundle':'', 'Locale':'', 'LocaleISOData':'', 'LongSummaryStatistics':'', 'Map':'', 'MissingFormatArgumentException':'', 'MissingFormatWidthException':'', 'MissingResourceException':'', 'NavigableMap':'', 'NavigableSet':'', 'NoSuchElementException':'', 'Objects':'', 'Observable':'', 'Observer':'', 'Optional':'', 'OptionalDouble':'', 'OptionalInt':'', 'OptionalLong':'', 'PrimitiveIterator':'', 'PriorityQueue':'', 'Properties':'', 'PropertyPermission':'', 'PropertyPermissionCollection':'', 'PropertyResourceBundle':'', 'Queue':'', 'Random':'', 'RandomAccess':'', 'RandomAccessSubList':'', 'RegularEnumSet':'', 'ResourceBundle':'', 'Scanner':'', 'ServiceConfigurationError':'', 'ServiceLoader':'', 'Set':'', 'SimpleTimeZone':'', 'SortedMap':'', 'SortedSet':'', 'Spliterator':'', 'Spliterators':'', 'SplittableRandom':'', 'Stack':'', 'StringJoiner':'', 'StringTokenizer':'', 'SubList':'', 'TaskQueue':'', 'TimSort':'', 'TimeZone':'', 'Timer':'', 'TimerTask':'', 'TimerThread':'', 'TooManyListenersException':'', 'TreeMap':'', 'TreeSet':'', 'Tripwire':'', 'UUID':'', 'UnknownFormatConversionException':'', 'UnknownFormatFlagsException':'', 'Vector':'', 'WeakHashMap':'', 'AdaptingMetaClass':'', 'BenchmarkInterceptor':'', 'Binding':'', 'Buildable':'', 'Category':'', 'Delegate':'', 'DelegatingMetaClass':'', 'DeprecationException':'', 'EmptyRange':'', 'ExpandoMetaClass':'', 'ExpandoMetaClassCreationHandle':'', 'GString':'', 'Grab':'', 'GrabConfig':'', 'GrabExclude':'', 'GrabResolver':'', 'Grapes':'', 'GroovyClassLoader':'', 'GroovyCodeSource':'', 'GroovyInterceptable':'', 'GroovyLogTestCase':'', 'GroovyObject':'', 'GroovyObjectSupport':'', 'GroovyResourceLoader':'', 'GroovyRuntimeException':'', 'GroovyShell':'', 'GroovySystem':'', 'IllegalPropertyAccessException':'', 'Immutable':'', 'IntRange':'', 'Interceptor':'', 'Lazy':'', 'MapWithDefault':'', 'MetaArrayLengthProperty':'', 'MetaBeanProperty':'', 'MetaClass':'', 'MetaClassImpl':'', 'MetaClassRegistry':'', 'MetaClassRegistryChangeEvent':'', 'MetaClassRegistryChangeEventListener':'', 'MetaExpandoProperty':'', 'MetaMethod':'', 'MetaObjectProtocol':'', 'MetaProperty':'', 'MissingClassException':'', 'MissingFieldException':'', 'MissingMethodException':'', 'MissingPropertyException':'', 'Mixin':'', 'MutableMetaClass':'', 'Newify':'', 'NonEmptySequence':'', 'ObjectRange':'', 'PackageScope':'', 'ParameterArray':'', 'PropertyAccessInterceptor':'', 'PropertyValue':'', 'ProxyMetaClass':'', 'Range':'', 'ReadOnlyPropertyException':'', 'Reference':'', 'Script':'', 'Sequence':'', 'Singleton':'', 'SpreadListEvaluatingException':'', 'SpreadMap':'', 'SpreadMapEvaluatingException':'', 'StringWriterIOException':'', 'TracingInterceptor':'', 'Tuple':'', 'Writable':'', 'AbstractFactory':'', 'AllTestSuite':'', 'AntBuilder':'', 'AntBuilderLocator':'', 'BuilderSupport':'', 'CharsetToolkit':'', 'CliBuilder':'', 'ConfigBinding':'', 'ConfigObject':'', 'ConfigSlurper':'', 'Eval':'', 'Expando':'', 'Factory':'', 'FactoryBuilderSupport':'', 'FactoryInterceptorMetaClass':'', 'FileNameByRegexFinder':'', 'FileNameFinder':'', 'GroovyCollections':'', 'GroovyLog':'', 'GroovyMBean':'', 'GroovyScriptEngine':'', 'GroovyShellTestCase':'', 'GroovyTestCase':'', 'GroovyTestSuite':'', 'IFileNameFinder':'', 'IndentPrinter':'', 'JavadocAssertionTestBuilder':'', 'JavadocAssertionTestSuite':'', 'MapEntry':'', 'Node':'', 'NodeBuilder':'', 'NodeList':'', 'NodePrinter':'', 'ObjectGraphBuilder':'', 'ObservableList':'', 'ObservableMap':'', 'OptionAccessor':'', 'OrderBy':'', 'PermutationGenerator':'', 'ProxyGenerator':'', 'ResourceConnector':'', 'ResourceException':'', 'ScriptException':'', 'XmlNodePrinter':'', 'XmlParser':'', 'XmlSlurper':''},
-        \ 'kotlin' : {}
+    let g:vimport_ignore_classnames={ 'java' : {}, 'groovy' : {}, 'kotlin' : {}
     \ }
 endif
 
@@ -30,7 +27,11 @@ if !exists('g:vimport_auto_remove')
 endif
 
 if !exists('g:vimport_import_lists') " filetypes mapped to files to use for class lookup
-    let g:vimport_import_lists = {'java':[], 'groovy':[], 'kotlin':[]}
+    let g:vimport_import_lists = {
+		\'java':{'imports': [] , 'ignores': {}},
+		\ 'groovy':{'imports': [] , 'ignores': {}},
+		\ 'kotlin': {'imports': [] , 'ignores': {}}
+	\ }
 endif
 
 if !exists('g:vimport_import_groups')
@@ -55,6 +56,15 @@ if !exists('g:vimport_filetype_import_files')
         \ 'java': [s:current_file . '/vimports_java.txt'],
         \ 'groovy': [s:current_file . '/vimports_java.txt', s:current_file . '/vimports_groovy.txt', s:current_file . '/vimports_grails.txt'],
         \ 'kotlin': [s:current_file . '/vimports_kotlin.txt']
+    \ }
+endif
+
+if !exists('g:vimport_filetype_ignore_files')
+    let s:current_file=expand("<sfile>:h:h") . "/data"
+    let g:vimport_filetype_ignore_files= {
+        \ 'java': [s:current_file . '/vimport_ignore_java.txt'],
+        \ 'groovy': [s:current_file . '/vimport_ignore_groovy.txt', s:current_file . '/vimport_ignore_java.txt'],
+        \ 'kotlin': []
     \ }
 endif
 
@@ -126,17 +136,46 @@ function! s:GetAvailableImports()
     endif
 
     if root != ''
-        if !has_key(g:vimport_import_lists, root)
+        if !s:HasImportKey(root)
             call VimportLoadImportsFromGradle()
         endif
-        if has_key(g:vimport_import_lists, &filetype)
-            return g:vimport_import_lists[root] + g:vimport_import_lists[&filetype]
+        if s:HasImportKey(&filetype)
+            let dirList = s:GetImportList(root)
+			let typeList = s:GetImportList(&filetype)
+			return dirList + typeList
         else
-            return g:vimport_import_lists[root]
+            return s:GetImportList(root)
         endif
     else
-        return g:vimport_import_lists[&filetype]
+        return s:GetImportList(&filetype)
     endif
+endfunction
+
+function s:HasImportKey(name)
+	return has_key(g:vimport_import_lists, a:name)
+endfunction
+
+function! s:GetImportList(name)
+	return g:vimport_import_lists[a:name]['imports']
+endfunction
+
+function! s:SetImportList(name, value)
+	if (!has_key(g:vimport_import_lists, a:name))
+		let g:vimport_import_lists[a:name] = { 'imports':[], 'ignores':{} }
+	endif
+	let g:vimport_import_lists[a:name]['imports'] = a:value
+endfunction
+
+function! s:ShouldIgnoreClass(class)
+	let ignores = g:vimport_import_lists[&filetype]['ignores']
+	return has_key(ignores, a:class)
+endfunction
+
+function! s:SetIgnoreList(name, value)
+	if (!has_key(g:vimport_import_lists, a:name))
+		let g:vimport_import_lists[a:name] = { 'imports':[], 'ignores':{} }
+	endif
+	let g:vimport_import_lists[a:name]['ignores'] = a:value
 endfunction
 
 function! s:GetFilePathList(classToFind)
@@ -453,21 +492,38 @@ endfunction
 
 "Loading of imports from a file
 function! VimportLoadImports(filetype)
-
     let importFiles = g:vimport_filetype_import_files[a:filetype]
-    for importFile in importFiles
-        if filereadable(importFile)
-            for line in readfile(importFile)
+	let list = s:LoadListFromFileList(importFiles)
+	call s:SetImportList(a:filetype, list)
+endfunction
+
+"Loading ignored classes from file
+function! VimportLoadIgnores(filetype)
+    let ignoreFiles = g:vimport_filetype_ignore_files[a:filetype]
+	let list = s:LoadListFromFileList(ignoreFiles)
+
+	let map = {}
+	for l in list
+		let map[l] = ''
+	endfor
+	call s:SetIgnoreList(a:filetype, map)
+endfunction
+
+function! s:LoadListFromFileList(fileList)
+	let list = []
+    for f in a:fileList
+        if filereadable(f)
+            for line in readfile(f)
                 if len(line) > 0
                     if line[0] != '"'
-                        call add(g:vimport_import_lists[a:filetype], line)
+                        call add(list, line)
                     endif
                 endif
             endfor
         endif
     endfor
+	return list
 endfunction
-
 
 function! VimportLoadImportsFromGradle()
 
@@ -475,13 +531,14 @@ function! VimportLoadImportsFromGradle()
     echo "Loading classpath from Gradle..."
     call s:VimportCacheGradleClasspath()
     let root = s:VimportFindGradleRoot()
-    let g:vimport_import_lists[root] = []
+    let list = []
     let pythonScript = g:vimport_source_dir . "/data/createClassList.py"
     for line in readfile(g:vimport_gradle_cache_file)
         if strpart(line, strlen(line)-4) ==# '.jar'
             execute 'pyfile ' . pythonScript
         endif
     endfor
+	call s:SetImportList(root, list)
     redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
     echo "Finished loading classpath from Gradle."
 endfunction
@@ -533,7 +590,7 @@ function! VimportImportAll()
     let list=filter(copy(list), 'index(list, v:val, v:key+1)==-1')
 
     for item in list
-        if !has_key(g:vimport_ignore_classnames[&filetype], item)
+        if !s:ShouldIgnoreClass(item)
             call s:InsertImportForClassName(item)
         endif
     endfor
@@ -552,9 +609,12 @@ command! RemoveUnneededImports :call RemoveUnneededImports() "Remove imports tha
 command! InsertImport :call InsertImport() "Insert the import under the word
 command! OrganizeImports :call OrganizeImports(g:vimport_auto_remove, 1) "Sort the imports and put spaces between packages with different spaces
 
-call VimportLoadImports('java')
-call VimportLoadImports('groovy')
-call VimportLoadImports('kotlin')
+let s:defaultFileTypes = ['java', 'groovy', 'kotlin']
+
+for f in s:defaultFileTypes
+	call VimportLoadImports(f)
+	call VimportLoadIgnores(f)
+endfor
 
 "Key mappings
 if g:vimport_map_keys

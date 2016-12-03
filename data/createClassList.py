@@ -18,5 +18,5 @@ finally:
 classFiles.sort()
 for className in classFiles:
     formattedName = string.replace(className, '/', '.')[:-6]
-    vim.command(':call add(g:vimport_import_lists[root], "' + formattedName + '")')
+    vim.command(':call add(list, "' + formattedName + '")')
 
