@@ -75,21 +75,12 @@ function! InsertImport()
     if !result
         echoerr "no import was found"
     else
-        call VimportCleanup()
+        call OrganizeImports(g:vimport_auto_remove, g:vimport_auto_organize)
     endif
 
     call setpos('.', original_pos)
 endfunction
 
-function VimportCleanup()
-    if (g:vimport_auto_remove)
-        call RemoveUnneededImports()
-    endif
-    if (g:vimport_auto_organize)
-        call OrganizeImports()
-        call SpaceAfterPackage()
-    endif
-endfunction
 
 function! InsertImportForClassName(classToFind)
 
@@ -103,7 +94,7 @@ function! InsertImportForClassName(classToFind)
         if (shouldCreateImport)
             call add(pathList, f)
         else
-            return
+            return 1
         endif
     endfor
 
@@ -292,7 +283,7 @@ function! GetPackageLineNumber(filePath)
 endfunction
 
 
-function! OrganizeImports()
+function! OrganizeImports(remove, sort)
     let pos = getpos('.')
 
     let lines = GrabImportBlock()
@@ -300,15 +291,35 @@ function! OrganizeImports()
         " No imports to organize
         return
     endif
-    let lines = SortImports(lines)
 
+    if (a:remove)
+        let lines = RemoveUnneededImportsFromList(lines)
+    endif
+    if (a:sort)
+        let lines = SortImports(lines)
+    endif
+
+    call VimportWriteImports(lines)
+    call SpaceAfterPackage()
+
+    call setpos('.', pos)
+endfunction
+
+
+function VimportWriteImports(lines)
+    for line in a:lines
+        execute "normal I" . line . "\<CR>"
+    endfor
+endfunction
+
+function! VimportAddBlankLines(lines)
     let currentprefix = ''
     let currentline = ''
     let firstline = ''
 
-    for line in lines
+    let lines = []
+    for line in a:lines
         let pathList = split(line, '\.')
-
         if len(pathList) > 1
             let newprefix = pathList[0]
             if currentline !=# line
@@ -319,15 +330,15 @@ function! OrganizeImports()
                         if firstline ==# ''
                             let firstline = line
                         else
-                            execute "normal I\<CR>"
+                            call add(lines, '')
                         endif
                     endif
-                    execute "normal I" . line . "\<CR>"
                 endif
             endif
+            call add(lines, line)
         endif
     endfor
-    call setpos('.', pos)
+    return lines
 endfunction
 
 function! SpaceAfterPackage()
@@ -360,7 +371,7 @@ function! GrabImportBlock()
     if start == 0
         return []
     endif
-    let lines = sort(getline(start, end))
+    let lines = getline(start, end)
 
     execute "normal " . start . "G"
     if end == start
@@ -413,7 +424,7 @@ function! SortImports(lines)
     for importGroup in g:vimport_import_groups
         let defaultGroup = defaultGroup + importGroups[importGroup.name]
     endfor
-    return defaultGroup
+    return VimportAddBlankLines(defaultGroup)
 
 endfunction
 
@@ -425,8 +436,6 @@ function! RemoveUnneededImports()
         " No imports to organize
         return
     endif
-
-    let lines = SortImports(lines)
 
     let updatedLines = RemoveUnneededImportsFromList(lines)
 
@@ -449,6 +458,9 @@ function! RemoveUnneededImportsFromList(lines)
             if classname ==# "*" || CountOccurances(classname) > 0
                 call add(updatedLines, substitute(line, '^\(\s\*\)','',''))
             endif
+        else
+            " Don't remove spaces
+            call add(updatedLines, '')
         endif
     endfor
     return updatedLines
@@ -531,6 +543,9 @@ function! VimportImportAll()
 
     let start = search("^import", 'b') + 1 "Don't search the imports for class names
 
+    " search for the pattern and call AddToMatches for each match.  /n
+    " prevents it from actually doing a replace
+    " AddToMatches just populates s:classNames
     execute ":keeppatterns " . start . ",$s/\\v[^a-z](([A-Z]+[a-z0-9]+)+)/\\=AddToMatches(submatch(1))/gn"
 
     let list = s:classNames
@@ -543,7 +558,7 @@ function! VimportImportAll()
         endif
     endfor
 
-    call VimportCleanup()
+    call OrganizeImports(g:vimport_auto_remove, g:vimport_auto_organize)
     echo "Done with import all"
 
 endfunction
@@ -555,8 +570,7 @@ command! VimportImportAll :call VimportImportAll() "Search the file for class na
 
 command! RemoveUnneededImports :call RemoveUnneededImports() "Remove imports that aren't referenced in the file
 command! InsertImport :call InsertImport() "Insert the import under the word
-command! OrganizeImports :call OrganizeImports() "Sort the imports and put spaces between packages with different spaces
-command! SpaceAfterPackage :call SpaceAfterPackage() " Add a space after the package
+command! OrganizeImports :call OrganizeImports(g:vimport_auto_remove, 1) "Sort the imports and put spaces between packages with different spaces
 
 call VimportLoadImports('java')
 call VimportLoadImports('groovy')
