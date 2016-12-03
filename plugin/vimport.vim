@@ -149,7 +149,6 @@ function! GetVimportFiles()
 endfunction
 
 function! GetFilePathList(classToFind)
-    echo "Searching CWD for matching files..."
     let cwd = getcwd()
     if !has_key(g:vimport_filepath_cache, cwd)
         call RefreshFilePathListCache()
@@ -208,7 +207,6 @@ function! CreateImports(pathList)
             let index += 1
         endwhile
         let chosenIndex = input(message . 'Which import?: ')
-        echom chosenIndex
         if chosenIndex ==# ''
             return
         endif
@@ -448,7 +446,6 @@ function! RemoveUnneededImportsFromList(lines)
             " import com.MyClass as MyAwesomeClass
             let tempString = substitute(line, '\s', '\.', 'g')
             let classname = substitute(split(tempString, '\.')[-1], ';', '', '')
-            " echoerr classname . " " . CountOccurances(classname)
             if classname ==# "*" || CountOccurances(classname) > 0
                 call add(updatedLines, substitute(line, '^\(\s\*\)','',''))
             endif
@@ -465,7 +462,6 @@ endfunction
 "Loading of imports from a file
 function! VimportLoadImports(filetype)
 
-    "echo "Loading imports for " . a:filetype . "..."
     let importFiles = g:vimport_filetype_import_files[a:filetype]
     for importFile in importFiles
         if filereadable(importFile)
