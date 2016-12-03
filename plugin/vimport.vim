@@ -70,7 +70,7 @@ function! InsertImport()
     let original_pos = getpos('.')
     let classToFind = expand("<cword>")
 
-    let result = InsertImportForClassName(classToFind)
+    let result = s:InsertImportForClassName(classToFind)
 
     if !result
         echoerr "no import was found"
@@ -82,10 +82,10 @@ function! InsertImport()
 endfunction
 
 
-function! InsertImportForClassName(classToFind)
+function! s:InsertImportForClassName(classToFind)
 
-    let localFilePaths = GetFilePathList(a:classToFind)
-    let otherFilePaths = FindFileInList(a:classToFind, GetVimportFiles())
+    let localFilePaths = s:GetFilePathList(a:classToFind)
+    let otherFilePaths = s:FindFileInList(a:classToFind, s:GetAvailableImports())
     let filePathList = localFilePaths + otherFilePaths
 
     let pathList = []
@@ -101,13 +101,13 @@ function! InsertImportForClassName(classToFind)
     if pathList ==# []
         return 0
     else
-        call CreateImports(pathList)
+        call s:CreateImports(pathList)
         return 1
     endif
 
 endfunction
 
-function! FindFileInList(className, list)
+function! s:FindFileInList(className, list)
     let filePathList = []
     for line in a:list
         let tempClassList = split(line, '\.')
@@ -118,9 +118,9 @@ function! FindFileInList(className, list)
     return filePathList
 endfunction
 
-function! GetVimportFiles()
+function! s:GetAvailableImports()
     if g:vimport_lookup_gradle_classpath ==# 1
-        let root = VimportFindGradleRoot()
+        let root = s:VimportFindGradleRoot()
     else
         let root = ''
     endif
@@ -139,31 +139,12 @@ function! GetVimportFiles()
     endif
 endfunction
 
-function! GetFilePathList(classToFind)
+function! s:GetFilePathList(classToFind)
     let cwd = getcwd()
     if !has_key(g:vimport_filepath_cache, cwd)
         call RefreshFilePathListCache()
     endif
-    return FindFileInList(a:classToFind, g:vimport_filepath_cache[cwd])
-endfunction
-
-function! GetFilePathListFromFiles(classToFind)
-    let filePathList = []
-    for extension in g:vimport_file_extensions
-        let searchString = '**/' . a:classToFind . '.' . extension
-        let paths = globpath(g:vimport_search_path, searchString, 1)
-        let multiplePaths = split(paths, '\n')
-        for p in multiplePaths
-            let package = GetPackageFromFile(p)
-            if package !=# ''
-                let fullPath =  package . '.' . a:classToFind
-                if (index(filePathList, fullPath) ==# -1)
-                    call add(filePathList,fullPath)
-                endif
-            endif
-        endfor
-    endfor
-    return filePathList
+    return s:FindFileInList(a:classToFind, g:vimport_filepath_cache[cwd])
 endfunction
 
 function! RefreshFilePathListCache()
@@ -185,7 +166,7 @@ function! RefreshFilePathListCache()
     return filePathList
 endfunction
 
-function! CreateImports(pathList)
+function! s:CreateImports(pathList)
     let chosenPath = a:pathList[0]
     if len(a:pathList) > 1
         call inputsave()
@@ -206,10 +187,10 @@ function! CreateImports(pathList)
         redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
         call inputrestore()
     endif
-    call VimportCreateImport(chosenPath)
+    call s:VimportCreateImport(chosenPath)
 endfunction
 
-function! VimportCreateImport(path)
+function! s:VimportCreateImport(path)
     let import = 'import ' . a:path
     let extension = expand("%:e")
     if (extension ==# 'java')
@@ -218,7 +199,7 @@ function! VimportCreateImport(path)
         let formattedImport = import
     endif
 
-    let packageLine = GetPackageLineNumber(expand("%:p"))
+    let packageLine = s:GetPackageLineNumber(expand("%:p"))
     if packageLine > -1
         execute "normal " . (packageLine + 1) . "Go"
     else
@@ -229,7 +210,7 @@ endfunction
 
 function! ShouldCreateImport(path)
     let currentpackage = GetCurrentPackage()
-    let importPackage = RemoveFileFromPackage(a:path)
+    let importPackage = s:RemoveFileFromPackage(a:path)
     if importPackage != ''
         if importPackage != currentpackage
             let starredImport = search(importPackage . "\\.\\*", 'nwc')
@@ -252,12 +233,12 @@ function! GetCurrentPackage()
     return GetPackageFromFile(expand("%:p"))
 endfunction
 
-function! RemoveFileFromPackage(fullpath)
+function! s:RemoveFileFromPackage(fullpath)
     return join(split(a:fullpath,'\.')[0:-2],'.')
 endfunction
 
 function! GetPackageFromFile(filePath)
-    let packageDeclaration = GetPackageLine(a:filePath)
+    let packageDeclaration = s:GetPackageLine(a:filePath)
     if packageDeclaration ==# ''
         return ''
     endif
@@ -267,16 +248,15 @@ function! GetPackageFromFile(filePath)
 
 endfunction
 
-function! GetPackageLine(filePath)
-    let fileLines = readfile(a:filePath, '', 20) " arbitrary limit on number of lines to read
-    let line = match(fileLines, "^package")
+function! s:GetPackageLine(filePath)
+    let line = s:GetPackageLineNumber(a:filePath)
     if line == -1
         return ''
     endif
-    return fileLines[line]
+    return getline(line)
 endfunction
 
-function! GetPackageLineNumber(filePath)
+function! s:GetPackageLineNumber(filePath)
     let fileLines = readfile(a:filePath, '', 20) " arbitrary limit on number of lines to read
     let line = match(fileLines, "^package")
     return line
@@ -293,26 +273,26 @@ function! OrganizeImports(remove, sort)
     endif
 
     if (a:remove)
-        let lines = RemoveUnneededImportsFromList(lines)
+        let lines = s:RemoveUnneededImportsFromList(lines)
     endif
     if (a:sort)
-        let lines = SortImports(lines)
+        let lines = s:SortImports(lines)
     endif
 
-    call VimportWriteImports(lines)
-    call SpaceAfterPackage()
+    call s:VimportWriteImports(lines)
+    call s:SpaceAfterPackage()
 
     call setpos('.', pos)
 endfunction
 
 
-function VimportWriteImports(lines)
+function s:VimportWriteImports(lines)
     for line in a:lines
         execute "normal I" . line . "\<CR>"
     endfor
 endfunction
 
-function! VimportAddBlankLines(lines)
+function! s:VimportAddBlankLines(lines)
     let currentprefix = ''
     let currentline = ''
     let firstline = ''
@@ -341,7 +321,7 @@ function! VimportAddBlankLines(lines)
     return lines
 endfunction
 
-function! SpaceAfterPackage()
+function! s:SpaceAfterPackage()
     let pos = getpos('.')
 
     execute "normal gg^"
@@ -382,7 +362,7 @@ function! GrabImportBlock()
     return lines
 endfunction
 
-function! CountOccurances(searchstring)
+function! s:CountOccurances(searchstring)
     let co = []
 
     let pos = getpos('.')
@@ -395,7 +375,7 @@ function! CountOccurances(searchstring)
     return len(co)
 endfunction
 
-function! SortImports(lines)
+function! s:SortImports(lines)
     let lines = sort(a:lines)
     let importGroups = {}
     let defaultGroup = []
@@ -404,7 +384,7 @@ function! SortImports(lines)
     endfor
 
     for line in lines
-        let trimmedLine = TrimString(line)
+        let trimmedLine = s:TrimString(line)
         if len(trimmedLine) > 0
             let importGroupName = ''
             for importGroup in g:vimport_import_groups
@@ -424,7 +404,7 @@ function! SortImports(lines)
     for importGroup in g:vimport_import_groups
         let defaultGroup = defaultGroup + importGroups[importGroup.name]
     endfor
-    return VimportAddBlankLines(defaultGroup)
+    return s:VimportAddBlankLines(defaultGroup)
 
 endfunction
 
@@ -437,7 +417,7 @@ function! RemoveUnneededImports()
         return
     endif
 
-    let updatedLines = RemoveUnneededImportsFromList(lines)
+    let updatedLines = s:RemoveUnneededImportsFromList(lines)
 
     for line in updatedLines
         execute "normal I" . line . "\<CR>"
@@ -446,16 +426,16 @@ function! RemoveUnneededImports()
     call setpos('.', pos)
 endfunction
 
-function! RemoveUnneededImportsFromList(lines)
+function! s:RemoveUnneededImportsFromList(lines)
     let updatedLines = []
     for line in a:lines
-        let trimmedLine = TrimString(line)
+        let trimmedLine = s:TrimString(line)
         if len(trimmedLine) > 0
             " Also split on spaces for things like
             " import com.MyClass as MyAwesomeClass
             let tempString = substitute(line, '\s', '\.', 'g')
             let classname = substitute(split(tempString, '\.')[-1], ';', '', '')
-            if classname ==# "*" || CountOccurances(classname) > 0
+            if classname ==# "*" || s:CountOccurances(classname) > 0
                 call add(updatedLines, substitute(line, '^\(\s\*\)','',''))
             endif
         else
@@ -467,7 +447,7 @@ function! RemoveUnneededImportsFromList(lines)
 endfunction
 
 
-function! TrimString(str)
+function! s:TrimString(str)
     return substitute(a:str, '^\s*\(.\{-}\)\s*$', '\1', '')
 endfunction
 
@@ -493,8 +473,8 @@ function! VimportLoadImportsFromGradle()
 
     redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
     echo "Loading classpath from Gradle..."
-    call VimportCacheGradleClasspath()
-    let root = VimportFindGradleRoot()
+    call s:VimportCacheGradleClasspath()
+    let root = s:VimportFindGradleRoot()
     let g:vimport_import_lists[root] = []
     let pythonScript = g:vimport_source_dir . "/data/createClassList.py"
     for line in readfile(g:vimport_gradle_cache_file)
@@ -506,9 +486,9 @@ function! VimportLoadImportsFromGradle()
     echo "Finished loading classpath from Gradle."
 endfunction
 
-function! VimportCacheGradleClasspath()
+function! s:VimportCacheGradleClasspath()
 
-    let root = VimportFindGradleRoot()
+    let root = s:VimportFindGradleRoot()
     if !empty(root)
         let cwd = getcwd()
         execute 'cd ' . fnameescape(root)
@@ -518,7 +498,7 @@ function! VimportCacheGradleClasspath()
     endif
 endfunction
 
-function! VimportFindGradleRoot()
+function! s:VimportFindGradleRoot()
     let root = expand('%:p')
     let previous = ""
 
@@ -535,7 +515,7 @@ function! VimportFindGradleRoot()
 endfunction
 
 let s:classNames = []
-function! AddToMatches(str)
+function! s:AddToMatches(str)
     call add(s:classNames, a:str)
 endfunction
 
@@ -546,7 +526,7 @@ function! VimportImportAll()
     " search for the pattern and call AddToMatches for each match.  /n
     " prevents it from actually doing a replace
     " AddToMatches just populates s:classNames
-    execute ":keeppatterns " . start . ",$s/\\v[^a-z](([A-Z]+[a-z0-9]+)+)/\\=AddToMatches(submatch(1))/gn"
+    execute ":keeppatterns " . start . ",$s/\\v[^a-z](([A-Z]+[a-z0-9]+)+)/\\=s:AddToMatches(submatch(1))/gn"
 
     let list = s:classNames
     " Filter duplicates
@@ -554,7 +534,7 @@ function! VimportImportAll()
 
     for item in list
         if !has_key(g:vimport_ignore_classnames[&filetype], item)
-            call InsertImportForClassName(item)
+            call s:InsertImportForClassName(item)
         endif
     endfor
 
