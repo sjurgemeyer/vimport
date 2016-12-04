@@ -25,8 +25,8 @@ if !exists('g:vimport_auto_remove')
     let g:vimport_auto_remove = 1
 endif
 
-if !exists('g:vimport_import_lists') " filetypes mapped to files to use for class lookup
-    let g:vimport_import_lists = {
+if !exists('g:vimport_filetype_caches') " filetypes mapped to files to use for class lookup
+    let g:vimport_filetype_caches = {
         \'java':{'imports': [] , 'ignores': {}},
         \ 'groovy':{'imports': [] , 'ignores': {}},
         \ 'kotlin': {'imports': [] , 'ignores': {}}
@@ -152,30 +152,30 @@ function! s:GetAvailableImports()
 endfunction
 
 function s:HasImportKey(name)
-    return has_key(g:vimport_import_lists, a:name)
+    return has_key(g:vimport_filetype_caches, a:name)
 endfunction
 
 function! s:GetImportList(name)
-    return g:vimport_import_lists[a:name]['imports']
+    return g:vimport_filetype_caches[a:name]['imports']
 endfunction
 
 function! s:SetImportList(name, value)
-    if (!has_key(g:vimport_import_lists, a:name))
-        let g:vimport_import_lists[a:name] = { 'imports':[], 'ignores':{} }
+    if (!has_key(g:vimport_filetype_caches, a:name))
+        let g:vimport_filetype_caches[a:name] = { 'imports':[], 'ignores':{} }
     endif
-    let g:vimport_import_lists[a:name]['imports'] = a:value
+    let g:vimport_filetype_caches[a:name]['imports'] = a:value
 endfunction
 
 function! s:ShouldIgnoreClass(class)
-    let ignores = g:vimport_import_lists[&filetype]['ignores']
+    let ignores = g:vimport_filetype_caches[&filetype]['ignores']
     return has_key(ignores, a:class)
 endfunction
 
 function! s:SetIgnoreList(name, value)
-    if (!has_key(g:vimport_import_lists, a:name))
-        let g:vimport_import_lists[a:name] = { 'imports':[], 'ignores':{} }
+    if (!has_key(g:vimport_filetype_caches, a:name))
+        let g:vimport_filetype_caches[a:name] = { 'imports':[], 'ignores':{} }
     endif
-    let g:vimport_import_lists[a:name]['ignores'] = a:value
+    let g:vimport_filetype_caches[a:name]['ignores'] = a:value
 endfunction
 
 function! s:GetFilePathList(classToFind)
