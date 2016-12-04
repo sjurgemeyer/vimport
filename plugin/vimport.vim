@@ -25,6 +25,10 @@ if !exists('g:vimport_auto_remove')
     let g:vimport_auto_remove = 1
 endif
 
+if !exists('g:vimport_add_package_spaces')
+    let g:vimport_add_package_spaces= 1
+endif
+
 if !exists('g:vimport_filetype_caches') " filetypes mapped to files to use for class lookup
     let g:vimport_filetype_caches = {
         \'java':{'imports': [] , 'ignores': {}},
@@ -449,7 +453,10 @@ function! s:SortImports(lines)
     for importGroup in g:vimport_import_groups
         let defaultGroup = defaultGroup + importGroups[importGroup.name]
     endfor
-    return s:VimportAddBlankLines(defaultGroup)
+	if g:vimport_add_package_spaces
+		let defaultGroup = s:VimportAddBlankLines(defaultGroup)
+	endif
+	return defaultGroup
 
 endfunction
 
