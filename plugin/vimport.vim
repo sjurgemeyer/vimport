@@ -14,8 +14,7 @@ if !exists('g:vimport_gradle_reload_shortcut')
     let g:vimport_gradle_reload_shortcut='<leader>r'
 endif
 if !exists('g:vimport_ignore_classnames')
-    let g:vimport_ignore_classnames={ 'java' : {}, 'groovy' : {}, 'kotlin' : {}
-    \ }
+    let g:vimport_ignore_classnames={ 'java' : {}, 'groovy' : {}, 'kotlin' : {} }
 endif
 
 if !exists('g:vimport_auto_organize')
@@ -28,10 +27,10 @@ endif
 
 if !exists('g:vimport_import_lists') " filetypes mapped to files to use for class lookup
     let g:vimport_import_lists = {
-		\'java':{'imports': [] , 'ignores': {}},
-		\ 'groovy':{'imports': [] , 'ignores': {}},
-		\ 'kotlin': {'imports': [] , 'ignores': {}}
-	\ }
+        \'java':{'imports': [] , 'ignores': {}},
+        \ 'groovy':{'imports': [] , 'ignores': {}},
+        \ 'kotlin': {'imports': [] , 'ignores': {}}
+    \ }
 endif
 
 if !exists('g:vimport_import_groups')
@@ -83,9 +82,10 @@ function! InsertImport()
     let result = s:InsertImportForClassName(classToFind)
 
     if !result
+        redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
         echoerr "no import was found"
     else
-        call OrganizeImports(g:vimport_auto_remove, g:vimport_auto_organize)
+		call OrganizeImports(g:vimport_auto_remove, g:vimport_auto_organize)
     endif
 
     call setpos('.', original_pos)
@@ -141,8 +141,8 @@ function! s:GetAvailableImports()
         endif
         if s:HasImportKey(&filetype)
             let dirList = s:GetImportList(root)
-			let typeList = s:GetImportList(&filetype)
-			return dirList + typeList
+            let typeList = s:GetImportList(&filetype)
+            return dirList + typeList
         else
             return s:GetImportList(root)
         endif
@@ -152,30 +152,30 @@ function! s:GetAvailableImports()
 endfunction
 
 function s:HasImportKey(name)
-	return has_key(g:vimport_import_lists, a:name)
+    return has_key(g:vimport_import_lists, a:name)
 endfunction
 
 function! s:GetImportList(name)
-	return g:vimport_import_lists[a:name]['imports']
+    return g:vimport_import_lists[a:name]['imports']
 endfunction
 
 function! s:SetImportList(name, value)
-	if (!has_key(g:vimport_import_lists, a:name))
-		let g:vimport_import_lists[a:name] = { 'imports':[], 'ignores':{} }
-	endif
-	let g:vimport_import_lists[a:name]['imports'] = a:value
+    if (!has_key(g:vimport_import_lists, a:name))
+        let g:vimport_import_lists[a:name] = { 'imports':[], 'ignores':{} }
+    endif
+    let g:vimport_import_lists[a:name]['imports'] = a:value
 endfunction
 
 function! s:ShouldIgnoreClass(class)
-	let ignores = g:vimport_import_lists[&filetype]['ignores']
-	return has_key(ignores, a:class)
+    let ignores = g:vimport_import_lists[&filetype]['ignores']
+    return has_key(ignores, a:class)
 endfunction
 
 function! s:SetIgnoreList(name, value)
-	if (!has_key(g:vimport_import_lists, a:name))
-		let g:vimport_import_lists[a:name] = { 'imports':[], 'ignores':{} }
-	endif
-	let g:vimport_import_lists[a:name]['ignores'] = a:value
+    if (!has_key(g:vimport_import_lists, a:name))
+        let g:vimport_import_lists[a:name] = { 'imports':[], 'ignores':{} }
+    endif
+    let g:vimport_import_lists[a:name]['ignores'] = a:value
 endfunction
 
 function! s:GetFilePathList(classToFind)
@@ -203,28 +203,33 @@ function! RefreshFilePathListCache()
     let cwd = getcwd()
     let g:vimport_filepath_cache[cwd] = filePathList
     return filePathList
+
 endfunction
 
 function! s:CreateImports(pathList)
     let chosenPath = a:pathList[0]
     if len(a:pathList) > 1
-        call inputsave()
-        let originalCmdHeight = &cmdheight
-        let &cmdheight = len(a:pathList) + 1
         let index = 0
-        let message = ""
+        let l:msg = ""
         while index < len(a:pathList)
-            let message = message . "[" . (index + 1) . "] " . a:pathList[index] . "\n"
+            let l:msg = l:msg . "[" . (index + 1) . "] " . a:pathList[index] . "\n"
             let index += 1
         endwhile
-        let chosenIndex = input(message . 'Which import?: ')
-        if chosenIndex ==# ''
+
+        redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
+        let originalCmdHeight = &cmdheight
+        call inputsave()
+        let chosenIndex = input(l:msg . 'Which import?: ')
+        let &cmdheight = len(a:pathList) + 1
+        let &cmdheight = originalCmdHeight
+        call inputrestore()
+        redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
+
+        if chosenIndex !=# ''
+            let chosenPath = a:pathList[chosenIndex-1]
+        else
             return
         endif
-        let chosenPath = a:pathList[chosenIndex-1]
-        let &cmdheight = originalCmdHeight
-        redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
-        call inputrestore()
     endif
     call s:VimportCreateImport(chosenPath)
 endfunction
@@ -288,11 +293,12 @@ function! GetPackageFromFile(filePath)
 endfunction
 
 function! s:GetPackageLine(filePath)
-    let line = s:GetPackageLineNumber(a:filePath)
+    let fileLines = readfile(a:filePath, '', 20) " arbitrary limit on number of lines to read
+    let line = match(fileLines, "^package")
     if line == -1
         return ''
     endif
-    return getline(line)
+    return fileLines[line]
 endfunction
 
 function! s:GetPackageLineNumber(filePath)
@@ -493,24 +499,24 @@ endfunction
 "Loading of imports from a file
 function! VimportLoadImports(filetype)
     let importFiles = g:vimport_filetype_import_files[a:filetype]
-	let list = s:LoadListFromFileList(importFiles)
-	call s:SetImportList(a:filetype, list)
+    let list = s:LoadListFromFileList(importFiles)
+    call s:SetImportList(a:filetype, list)
 endfunction
 
 "Loading ignored classes from file
 function! VimportLoadIgnores(filetype)
     let ignoreFiles = g:vimport_filetype_ignore_files[a:filetype]
-	let list = s:LoadListFromFileList(ignoreFiles)
+    let list = s:LoadListFromFileList(ignoreFiles)
 
-	let map = {}
-	for l in list
-		let map[l] = ''
-	endfor
-	call s:SetIgnoreList(a:filetype, map)
+    let map = {}
+    for l in list
+        let map[l] = ''
+    endfor
+    call s:SetIgnoreList(a:filetype, map)
 endfunction
 
 function! s:LoadListFromFileList(fileList)
-	let list = []
+    let list = []
     for f in a:fileList
         if filereadable(f)
             for line in readfile(f)
@@ -522,7 +528,7 @@ function! s:LoadListFromFileList(fileList)
             endfor
         endif
     endfor
-	return list
+    return list
 endfunction
 
 function! VimportLoadImportsFromGradle()
@@ -538,7 +544,7 @@ function! VimportLoadImportsFromGradle()
             execute 'pyfile ' . pythonScript
         endif
     endfor
-	call s:SetImportList(root, list)
+    call s:SetImportList(root, list)
     redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
     echo "Finished loading classpath from Gradle."
 endfunction
@@ -612,8 +618,8 @@ command! OrganizeImports :call OrganizeImports(g:vimport_auto_remove, 1) "Sort t
 let s:defaultFileTypes = ['java', 'groovy', 'kotlin']
 
 for f in s:defaultFileTypes
-	call VimportLoadImports(f)
-	call VimportLoadIgnores(f)
+    call VimportLoadImports(f)
+    call VimportLoadIgnores(f)
 endfor
 
 "Key mappings
