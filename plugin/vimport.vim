@@ -89,7 +89,7 @@ function! InsertImport()
         redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
         echoerr "no import was found"
     else
-		call OrganizeImports(g:vimport_auto_remove, g:vimport_auto_organize)
+        call OrganizeImports(g:vimport_auto_remove, g:vimport_auto_organize)
     endif
 
     call setpos('.', original_pos)
@@ -453,10 +453,10 @@ function! s:SortImports(lines)
     for importGroup in g:vimport_import_groups
         let defaultGroup = defaultGroup + importGroups[importGroup.name]
     endfor
-	if g:vimport_add_package_spaces
-		let defaultGroup = s:VimportAddBlankLines(defaultGroup)
-	endif
-	return defaultGroup
+    if g:vimport_add_package_spaces
+        let defaultGroup = s:VimportAddBlankLines(defaultGroup)
+    endif
+    return defaultGroup
 
 endfunction
 
@@ -575,6 +575,14 @@ function! s:VimportFindGradleRoot()
     while root !=# previous
 
         let path = globpath(root, '*.gradle', 1)
+        let multiplePaths = split(path, '\n')
+        for p in multiplePaths
+            let filename = fnamemodify(path, ':t')
+            if (filename != 'settings')
+                let path = p
+                break
+            endif
+        endfor
         if path !=# ''
             return fnamemodify(path, ':h')
         endif
