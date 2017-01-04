@@ -335,7 +335,7 @@ function! OrganizeImports(remove, sort)
 endfunction
 
 
-function s:VimportWriteImports(lines)
+function! s:VimportWriteImports(lines)
     for line in a:lines
         execute "normal I" . line . "\<CR>"
     endfor
