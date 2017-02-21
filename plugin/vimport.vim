@@ -336,8 +336,12 @@ endfunction
 
 
 function! s:VimportWriteImports(lines)
+    let previousLine = ''
     for line in a:lines
-        execute "normal I" . line . "\<CR>"
+        if previousLine != line
+            let previousLine = line
+            execute "normal I" . line . "\<CR>"
+        endif
     endfor
 endfunction
 
