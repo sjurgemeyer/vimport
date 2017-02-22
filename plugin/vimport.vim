@@ -155,7 +155,7 @@ function! s:GetAvailableImports()
     endif
 endfunction
 
-function s:HasImportKey(name)
+function! s:HasImportKey(name)
     return has_key(g:vimport_filetype_caches, a:name)
 endfunction
 
