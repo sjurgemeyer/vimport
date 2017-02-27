@@ -16,6 +16,6 @@ finally:
 
 classFiles.sort()
 for className in classFiles:
-    formattedName = string.replace(className, '/', '.')[:-6]
+    formattedName = str.replace(className, '/', '.')[:-6]
     vim.command(':call add(list, "' + formattedName + '")')
 
