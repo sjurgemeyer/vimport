@@ -549,10 +549,10 @@ function! VimportLoadImportsFromGradle()
     call s:VimportCacheGradleClasspath()
     let root = s:VimportFindGradleRoot()
     let list = []
-    let pythonScript = g:vimport_source_dir . "/data/createClassList.py"
+    let pythonScript = g:vimport_source_dir . "/data/createClassList"
     for line in readfile(g:vimport_gradle_cache_file)
         if strpart(line, strlen(line)-4) ==# '.jar'
-            execute 'pyfile ' . pythonScript
+            call s:VimportPy(pythonScript)
         endif
     endfor
     call s:SetImportList(root, list)
@@ -594,6 +594,14 @@ function! s:VimportFindGradleRoot()
         let root = fnamemodify(root, ':h')
     endwhile
     return ''
+endfunction
+
+function! s:VimportPy(pythonScript)
+	if has('python')
+		execute 'pyfile ' . a:pythonScript + '.py'
+	elseif has('python3')
+		execute 'py3file ' . a:pythonScript + '.py3'
+	endif
 endfunction
 
 let s:classNames = []
