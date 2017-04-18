@@ -14,7 +14,7 @@ if !exists('g:vimport_gradle_reload_shortcut')
     let g:vimport_gradle_reload_shortcut='<leader>r'
 endif
 if !exists('g:vimport_ignore_classnames')
-    let g:vimport_ignore_classnames={ 'java' : {}, 'groovy' : {}, 'kotlin' : {} }
+    let g:vimport_ignore_classnames={ 'java' : {}, 'groovy' : {}, 'kotlin' : {}, 'scala' : {}}
 endif
 
 if !exists('g:vimport_auto_organize')
@@ -33,7 +33,8 @@ if !exists('g:vimport_filetype_caches') " filetypes mapped to files to use for c
     let g:vimport_filetype_caches = {
         \'java':{'imports': [] , 'ignores': {}},
         \ 'groovy':{'imports': [] , 'ignores': {}},
-        \ 'kotlin': {'imports': [] , 'ignores': {}}
+        \ 'kotlin': {'imports': [] , 'ignores': {}},
+        \ 'scala': {'imports': [] , 'ignores': {}}
     \ }
 endif
 
@@ -45,7 +46,7 @@ if !exists('g:vimport_filepath_cache') " cache of local files
     let g:vimport_filepath_cache = {}
 endif
 if !exists('g:vimport_file_extensions') " extensions to search when looking for imports via file
-    let g:vimport_file_extensions = ['groovy', 'java', 'kt', 'kts']
+    let g:vimport_file_extensions = ['groovy', 'java', 'kt', 'kts', 'scala']
 endif
 
 if !exists('g:vimport_search_path')
@@ -58,7 +59,8 @@ if !exists('g:vimport_filetype_import_files')
     let g:vimport_filetype_import_files = {
         \ 'java': [s:current_file . '/vimports_java.txt'],
         \ 'groovy': [s:current_file . '/vimports_java.txt', s:current_file . '/vimports_groovy.txt', s:current_file . '/vimports_grails.txt'],
-        \ 'kotlin': [s:current_file . '/vimports_kotlin.txt']
+        \ 'kotlin': [s:current_file . '/vimports_kotlin.txt'],
+        \ 'scala': []
     \ }
 endif
 
@@ -67,7 +69,8 @@ if !exists('g:vimport_filetype_ignore_files')
     let g:vimport_filetype_ignore_files= {
         \ 'java': [s:current_file . '/vimport_ignore_java.txt'],
         \ 'groovy': [s:current_file . '/vimport_ignore_groovy.txt', s:current_file . '/vimport_ignore_java.txt'],
-        \ 'kotlin': []
+        \ 'kotlin': [],
+        \ 'scala': []
     \ }
 endif
 
@@ -261,7 +264,8 @@ function! ShouldCreateImport(path)
     let importPackage = s:RemoveFileFromPackage(a:path)
     if importPackage != ''
         if importPackage != currentpackage
-            let starredImport = search(importPackage . "\\.\\*", 'nwc')
+			" Stared imports include scala style _ imports
+            let starredImport = search(importPackage . "\\.[\\*_]", 'nwc')
             if starredImport > 0
                 return 0
             else
@@ -491,7 +495,9 @@ function! s:RemoveUnneededImportsFromList(lines)
             " import com.MyClass as MyAwesomeClass
             let tempString = substitute(line, '\s', '\.', 'g')
             let classname = substitute(split(tempString, '\.')[-1], ';', '', '')
-            if classname ==# "*" || s:CountOccurances(classname) > 0
+			" Always keep * and _ imports.  Also Scala's bracketed imports
+			" until I create a better way to verify those
+            if classname ==# "*" || classname ==# "_" || classname =~ "^\{" || s:CountOccurances(classname) > 0
                 call add(updatedLines, substitute(line, '^\(\s\*\)','',''))
             endif
         else
@@ -638,7 +644,7 @@ command! RemoveUnneededImports :call RemoveUnneededImports() "Remove imports tha
 command! InsertImport :call InsertImport() "Insert the import under the word
 command! OrganizeImports :call OrganizeImports(g:vimport_auto_remove, 1) "Sort the imports and put spaces between packages with different spaces
 
-let s:defaultFileTypes = ['java', 'groovy', 'kotlin']
+let s:defaultFileTypes = ['java', 'groovy', 'kotlin', 'scala']
 
 for f in s:defaultFileTypes
     call VimportLoadImports(f)
