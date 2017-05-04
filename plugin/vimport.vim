@@ -226,8 +226,8 @@ function! s:CreateImports(pathList)
         redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
         let originalCmdHeight = &cmdheight
         call inputsave()
-        let chosenIndex = input(l:msg . 'Which import?: ')
         let &cmdheight = len(a:pathList) + 1
+        let chosenIndex = input(l:msg . 'Which import?: ')
         let &cmdheight = originalCmdHeight
         call inputrestore()
         redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
@@ -618,13 +618,14 @@ function! VimportImportAll()
     " search for the pattern and call AddToMatches for each match.  /n
     " prevents it from actually doing a replace
     " AddToMatches just populates s:classNames
+	let s:classNames = []
     execute ":keeppatterns " . start . ",$s/\\v[^a-z](([A-Z]+[a-z0-9]+)+)/\\=s:AddToMatches(submatch(1))/gn"
 
-    let list = s:classNames
+    let classNameList = s:classNames
     " Filter duplicates
-    let list=filter(copy(list), 'index(list, v:val, v:key+1)==-1')
+    let classNameList=filter(copy(classNameList), 'index(classNameList, v:val, v:key+1)==-1')
 
-    for item in list
+    for item in classNameList
         if !s:ShouldIgnoreClass(item)
             call s:InsertImportForClassName(item)
         endif
