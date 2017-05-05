@@ -83,23 +83,21 @@ if !exists('g:vimport_gradle_cache_file')
 endif
 
 function! InsertImport()
-    let original_pos = getpos('.')
     let classToFind = expand("<cword>")
 
-    let result = s:InsertImportForClassName(classToFind)
+    let result = s:DetermineImportForClassName(classToFind)
 
-    if !result
+    if result == ''
         redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
         echoerr "no import was found"
     else
+	call s:WriteImportBlock([result])
         call OrganizeImports(g:vimport_auto_remove, g:vimport_auto_organize)
     endif
-
-    call setpos('.', original_pos)
 endfunction
 
 
-function! s:InsertImportForClassName(classToFind)
+function! s:DetermineImportForClassName(classToFind)
 
     let localFilePaths = s:GetFilePathList(a:classToFind)
     let otherFilePaths = s:FindFileInList(a:classToFind, s:GetAvailableImports())
@@ -116,10 +114,12 @@ function! s:InsertImportForClassName(classToFind)
     endfor
 
     if pathList ==# []
-        return 0
+        return ''
     else
-        call s:CreateImports(pathList)
-        return 1
+        let import = s:DetermineImport(pathList)
+	if import != ''
+	    return s:FormatImport(import)
+	endif
     endif
 
 endfunction
@@ -213,7 +213,7 @@ function! RefreshFilePathListCache()
 
 endfunction
 
-function! s:CreateImports(pathList)
+function! s:DetermineImport(pathList)
     let chosenPath = a:pathList[0]
     if len(a:pathList) > 1
         let index = 0
@@ -235,13 +235,13 @@ function! s:CreateImports(pathList)
         if chosenIndex !=# ''
             let chosenPath = a:pathList[chosenIndex-1]
         else
-            return
+            return ''
         endif
     endif
-    call s:VimportCreateImport(chosenPath)
+    return chosenPath
 endfunction
 
-function! s:VimportCreateImport(path)
+function! s:FormatImport(path)
     let import = 'import ' . a:path
     let extension = expand("%:e")
     if (extension ==# 'java')
@@ -249,8 +249,7 @@ function! s:VimportCreateImport(path)
     else
         let formattedImport = import
     endif
-
-    let result = s:WriteImportBlock(formattedImport)
+    return formattedImport
 endfunction
 
 function! ShouldCreateImport(path)
@@ -603,17 +602,26 @@ function! VimportImportAll()
     " Filter duplicates
     let classNameList=filter(copy(classNameList), 'index(classNameList, v:val, v:key+1)==-1')
 
+    let importList = []
     for item in classNameList
         if !s:ShouldIgnoreClass(item)
-            call s:InsertImportForClassName(item)
+            call add(importList, s:DetermineImportForClassName(item))
         endif
     endfor
 
+    call s:WriteImportBlock(importList)
     call OrganizeImports(g:vimport_auto_remove, g:vimport_auto_organize)
     echo "Done with import all"
 
 endfunction
 
+function VimportReloadAllCaches()
+    :call VimportLoadImports(&filetype)
+    :call VimportLoadImportsFromGradle()
+    :call RefreshFilePathListCache()
+endfunction
+
+command! VimportReloadCaches : call VimportReloadAllCaches()
 command! VimportReloadImportCache :call VimportLoadImports(&filetype) "Cache imports from import files
 command! VimportReloadGradleCache :call VimportLoadImportsFromGradle() "Reload the cache from the gradle build
 command! VimportReloadFilepathCache :call RefreshFilePathListCache() "Reload the cache from local file system
