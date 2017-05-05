@@ -250,13 +250,7 @@ function! s:VimportCreateImport(path)
         let formattedImport = import
     endif
 
-    let packageLine = s:GetPackageLineNumber(expand("%:p"))
-    if packageLine > -1
-        execute "normal " . (packageLine + 1) . "Go"
-    else
-        execute "normal ggo"
-    endif
-    execute "normal I" . formattedImport . "\<Esc>"
+    let result = s:WriteImportBlock(formattedImport)
 endfunction
 
 function! ShouldCreateImport(path)
@@ -273,7 +267,7 @@ function! ShouldCreateImport(path)
                 if existingImport > 0
                     return 0
                 endif
-            endif
+	    endif
         else
             return 0
         endif
@@ -309,6 +303,10 @@ function! s:GetPackageLine(filePath)
     return fileLines[line]
 endfunction
 
+function! s:GetPackageLineNumberForCurrentFile()
+    return s:GetPackageLineNumber(expand("%:p"))
+endfunction
+
 function! s:GetPackageLineNumber(filePath)
     let fileLines = readfile(a:filePath, '', 20) " arbitrary limit on number of lines to read
     let line = match(fileLines, "^package")
@@ -325,6 +323,7 @@ function! OrganizeImports(remove, sort)
         return
     endif
 
+    let lines = s:RemoveDuplicates(lines)
     if (a:remove)
         let lines = s:RemoveUnneededImportsFromList(lines)
     endif
@@ -332,21 +331,13 @@ function! OrganizeImports(remove, sort)
         let lines = s:SortImports(lines)
     endif
 
-    call s:VimportWriteImports(lines)
-    call s:SpaceAfterPackage()
+    let result = s:WriteImportBlock([''] + lines)
 
     call setpos('.', pos)
 endfunction
 
-
-function! s:VimportWriteImports(lines)
-    let previousLine = ''
-    for line in a:lines
-        if previousLine != line
-            let previousLine = line
-            execute "normal I" . line . "\<CR>"
-        endif
-    endfor
+function! s:RemoveDuplicates(list)
+    return filter(copy(a:list), 'index(a:list, v:val, v:key+1)==-1')
 endfunction
 
 function! s:VimportAddBlankLines(lines)
@@ -378,30 +369,14 @@ function! s:VimportAddBlankLines(lines)
     return lines
 endfunction
 
-function! s:SpaceAfterPackage()
-    let pos = getpos('.')
-
-    execute "normal gg^"
-    let packageStart = search("^package", 'c')
-    if packageStart == 0
-        return
-    endif
-
-    let importStart = search("^import", 'c')
-    if importStart == 0
-        return
-    endif
-
-    let expectedImportStart = (packageStart + 2)
-    if importStart != expectedImportStart
-        execute "normal O"
-    endif
-
-    call setpos('.', pos)
+function! s:WriteImportBlock(lines)
+    let packageLine = s:GetPackageLineNumberForCurrentFile()
+    let failed = append(packageLine+1, a:lines)
 endfunction
 
 function! GrabImportBlock()
 
+    let pos = getpos('.')
     execute "normal gg^"
     let start = search("^import", 'c')
     let end = search("^import", 'b')
@@ -410,12 +385,9 @@ function! GrabImportBlock()
     endif
     let lines = getline(start, end)
 
-    execute "normal " . start . "G"
-    if end == start
-        execute 'normal "_dd'
-    else
-        execute 'normal "_d' . (end-start) . "j"
-    endif
+    execute "normal " . (start-1) . "G"
+    execute start . ',' . end . 'd_'
+    call setpos('.', pos)
     return lines
 endfunction
 
@@ -479,9 +451,9 @@ function! RemoveUnneededImports()
 
     let updatedLines = s:RemoveUnneededImportsFromList(lines)
 
-    for line in updatedLines
-        execute "normal I" . line . "\<CR>"
-    endfor
+    let result = s:WriteImportBlock(updatedLines)
+
+
 
     call setpos('.', pos)
 endfunction
