@@ -85,19 +85,16 @@ endif
 function! InsertImport()
     let classToFind = expand("<cword>")
 
-    let result = s:DetermineImportForClassName(classToFind)
+    let result = s:DetermineImportForClassName(classToFind, 1)
 
-    if result == ''
-        redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
-        echoerr "no import was found"
-    else
+    if result != ''
 	call s:WriteImportBlock([result])
         call OrganizeImports(g:vimport_auto_remove, g:vimport_auto_organize)
     endif
 endfunction
 
 
-function! s:DetermineImportForClassName(classToFind)
+function! s:DetermineImportForClassName(classToFind, showErrors)
 
     let localFilePaths = s:GetFilePathList(a:classToFind)
     let otherFilePaths = s:FindFileInList(a:classToFind, s:GetAvailableImports())
@@ -109,11 +106,16 @@ function! s:DetermineImportForClassName(classToFind)
         if (shouldCreateImport)
             call add(pathList, f)
         else
-            return 1
+            return ''
         endif
     endfor
 
     if pathList ==# []
+	if (a:showErrors)
+	    redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
+	    echoerr "no import was found"
+	endif
+
         return ''
     else
         let import = s:DetermineImport(pathList)
@@ -605,7 +607,7 @@ function! VimportImportAll()
     let importList = []
     for item in classNameList
         if !s:ShouldIgnoreClass(item)
-            call add(importList, s:DetermineImportForClassName(item))
+            call add(importList, s:DetermineImportForClassName(item, 0))
         endif
     endfor
 
