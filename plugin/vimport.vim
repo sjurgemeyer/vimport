@@ -88,7 +88,7 @@ function! InsertImport()
     let result = s:DetermineImportForClassName(classToFind, 1)
 
     if result != ''
-	call s:WriteImportBlock([result])
+    call s:WriteImportBlock([result])
         call OrganizeImports(g:vimport_auto_remove, g:vimport_auto_organize)
     endif
 endfunction
@@ -111,17 +111,17 @@ function! s:DetermineImportForClassName(classToFind, showErrors)
     endfor
 
     if pathList ==# []
-	if (a:showErrors)
-	    redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
-	    echoerr "no import was found"
-	endif
+    if (a:showErrors)
+        redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
+        echoerr "no import was found"
+    endif
 
         return ''
     else
         let import = s:DetermineImport(pathList)
-	if import != ''
-	    return s:FormatImport(import)
-	endif
+    if import != ''
+        return s:FormatImport(import)
+    endif
     endif
 
 endfunction
@@ -348,9 +348,12 @@ function! s:VimportAddBlankLines(lines)
 
     let lines = []
     for line in a:lines
-        let pathList = split(line, '\.')
+
+        " hacky way of treating 'import static' as its own group
+        let templine = substitute(line, '\s', '\.', 'g')
+        let pathList = split(templine, '\.')
         if len(pathList) > 1
-            let newprefix = pathList[0]
+            let newprefix = pathList[1]
             if currentline !=# line
                 let currentline = line
                 if currentline !=# ''
