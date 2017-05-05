@@ -258,7 +258,7 @@ function! ShouldCreateImport(path)
     let importPackage = s:RemoveFileFromPackage(a:path)
     if importPackage != ''
         if importPackage != currentpackage
-			" Stared imports include scala style _ imports
+            " Stared imports include scala style _ imports
             let starredImport = search(importPackage . "\\.[\\*_]", 'nwc')
             if starredImport > 0
                 return 0
@@ -267,7 +267,7 @@ function! ShouldCreateImport(path)
                 if existingImport > 0
                     return 0
                 endif
-	    endif
+        endif
         else
             return 0
         endif
@@ -387,8 +387,8 @@ function! GrabImportBlock()
 
     let newEnd = end+1
     while (s:TrimString(getline(newEnd)) == '' && newEnd <= line('$'))
-	let end = newEnd
-	let newEnd = newEnd + 1
+    let end = newEnd
+    let newEnd = newEnd + 1
     endwhile
 
     execute "normal " . (start-1) . "G"
@@ -473,8 +473,8 @@ function! s:RemoveUnneededImportsFromList(lines)
             " import com.MyClass as MyAwesomeClass
             let tempString = substitute(line, '\s', '\.', 'g')
             let classname = substitute(split(tempString, '\.')[-1], ';', '', '')
-			" Always keep * and _ imports.  Also Scala's bracketed imports
-			" until I create a better way to verify those
+            " Always keep * and _ imports.  Also Scala's bracketed imports
+            " until I create a better way to verify those
             if classname ==# "*" || classname ==# "_" || classname =~ "^\{" || s:CountOccurances(classname) > 0
                 call add(updatedLines, substitute(line, '^\(\s\*\)','',''))
             endif
@@ -596,7 +596,7 @@ function! VimportImportAll()
     " search for the pattern and call AddToMatches for each match.  /n
     " prevents it from actually doing a replace
     " AddToMatches just populates s:classNames
-	let s:classNames = []
+    let s:classNames = []
     execute ":keeppatterns " . start . ",$s/\\v[^a-z](([A-Z]+[a-z0-9]+)+)/\\=s:AddToMatches(submatch(1))/gn"
 
     let classNameList = s:classNames
