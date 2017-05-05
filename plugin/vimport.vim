@@ -331,7 +331,7 @@ function! OrganizeImports(remove, sort)
         let lines = s:SortImports(lines)
     endif
 
-    let result = s:WriteImportBlock([''] + lines)
+    let result = s:WriteImportBlock([''] + lines  + [''])
 
     call setpos('.', pos)
 endfunction
@@ -384,6 +384,12 @@ function! GrabImportBlock()
         return []
     endif
     let lines = getline(start, end)
+
+    let newEnd = end+1
+    while (s:TrimString(getline(newEnd)) == '' && newEnd <= line('$'))
+	let end = newEnd
+	let newEnd = newEnd + 1
+    endwhile
 
     execute "normal " . (start-1) . "G"
     execute start . ',' . end . 'd_'
