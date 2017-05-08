@@ -88,8 +88,10 @@ function! InsertImport()
     let result = s:DetermineImportForClassName(classToFind, 1)
 
     if result != ''
-    call s:WriteImportBlock([result])
+        call s:WriteImportBlock([result])
         call OrganizeImports(g:vimport_auto_remove, g:vimport_auto_organize)
+
+        call s:Echo("Import created")
     endif
 endfunction
 
@@ -111,19 +113,16 @@ function! s:DetermineImportForClassName(classToFind, showErrors)
     endfor
 
     if pathList ==# []
-    if (a:showErrors)
-        redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
-        echoerr "no import was found"
-    endif
-
+        if (a:showErrors)
+            call s:Echo("No import was found")
+        endif
         return ''
     else
         let import = s:DetermineImport(pathList)
-    if import != ''
-        return s:FormatImport(import)
+        if import != ''
+            return s:FormatImport(import)
+        endif
     endif
-    endif
-
 endfunction
 
 function! s:FindFileInList(className, list)
@@ -225,14 +224,12 @@ function! s:DetermineImport(pathList)
             let index += 1
         endwhile
 
-        redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
         let originalCmdHeight = &cmdheight
         call inputsave()
         let &cmdheight = len(a:pathList) + 1
         let chosenIndex = input(l:msg . 'Which import?: ')
         let &cmdheight = originalCmdHeight
         call inputrestore()
-        redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
 
         if chosenIndex !=# ''
             let chosenPath = a:pathList[chosenIndex-1]
@@ -259,21 +256,29 @@ function! ShouldCreateImport(path)
     let importPackage = s:RemoveFileFromPackage(a:path)
     if importPackage != ''
         if importPackage != currentpackage
-            " Stared imports include scala style _ imports
-            let starredImport = search(importPackage . "\\.[\\*_]", 'nwc')
-            if starredImport > 0
+            let hasExistingImport = s:SearchFromTop("s:HasExistingImport", [importPackage, a:path])
+            if (hasExistingImport)
                 return 0
-            else
-                let existingImport = search(a:path . '\s*$', 'nwc')
-                if existingImport > 0
-                    return 0
-                endif
-        endif
+            endif
         else
             return 0
         endif
     endif
     return 1
+endfunction
+
+function! s:HasExistingImport(importPackage, path)
+
+    " Starred imports include scala style _ imports
+    let starredImport = search(a:importPackage . "\\.[\\*_]", 'nwc')
+    if starredImport > 0
+        return 1
+    else
+        let existingImport = search(a:path . '\s*$', 'nwc')
+        if existingImport > 0
+            return 1
+        endif
+    endif
 endfunction
 
 function! GetCurrentPackage()
@@ -316,7 +321,6 @@ endfunction
 
 
 function! OrganizeImports(remove, sort)
-    let pos = getpos('.')
 
     let lines = GrabImportBlock()
     if lines == []
@@ -334,7 +338,6 @@ function! OrganizeImports(remove, sort)
 
     let result = s:WriteImportBlock([''] + lines  + [''])
 
-    call setpos('.', pos)
 endfunction
 
 function! s:RemoveDuplicates(list)
@@ -378,40 +381,55 @@ function! s:WriteImportBlock(lines)
     let failed = append(packageLine+1, a:lines)
 endfunction
 
-function! GrabImportBlock()
-
+" Function to allow using the 'search' function while maintaining cursor
+" position.
+function! s:SearchFromTop(func, args)
     let pos = getpos('.')
-    execute "normal gg^"
-    let start = search("^import", 'c')
-    let end = search("^import", 'b')
+    silent execute "normal gg^"
+
+    let Fn = function(a:func)
+    let returnVal = call(Fn, a:args)
+
+    call setpos('.', pos)
+
+    return returnVal
+endfunction
+
+function! GrabImportBlock()
+    return s:SearchFromTop("s:GrabImportBlockImpl", [])
+endfunction
+
+function! s:GrabImportBlockImpl()
+
+    let start = search("^import", 'cn')
+    let end = search("^import", 'bwn')
     if start == 0
         return []
     endif
     let lines = getline(start, end)
 
+    "Also remove all blank lines after the import block
     let newEnd = end+1
     while (s:TrimString(getline(newEnd)) == '' && newEnd <= line('$'))
-    let end = newEnd
-    let newEnd = newEnd + 1
+        let end = newEnd
+        let newEnd = newEnd + 1
     endwhile
 
-    execute "normal " . (start-1) . "G"
-    execute start . ',' . end . 'd_'
-    call setpos('.', pos)
+    silent execute start . ',' . end . 'd_'
     return lines
 endfunction
 
-function! s:CountOccurances(searchstring)
-    let co = []
+"This is counting on the fact that the import block has been removed when
+"doing this search
+function! s:HasOccurance(searchstring)
+    return s:SearchFromTop("s:HasOccuranceImpl", [a:searchstring])
+endfunction
 
-    let pos = getpos('.')
-    execute "normal gg^"
-    while search(a:searchstring, "W") > 0
-        call add(co, 'a')
-    endwhile
-    call setpos('.', pos)
-
-    return len(co)
+function! s:HasOccuranceImpl(searchstring)
+    if search(a:searchstring, "Wn") > 0
+        return 1
+    endif
+    return 0
 endfunction
 
 function! s:SortImports(lines)
@@ -451,8 +469,11 @@ function! s:SortImports(lines)
 endfunction
 
 function! RemoveUnneededImports()
+    return s:SearchFromTop("s:RemoveUnneededImportsImpl", [])
+endfunction
 
-    let pos = getpos('.')
+function! s:RemoveUnneededImportsImpl()
+
     let lines = GrabImportBlock()
     if lines == []
         " No imports to organize
@@ -462,10 +483,6 @@ function! RemoveUnneededImports()
     let updatedLines = s:RemoveUnneededImportsFromList(lines)
 
     let result = s:WriteImportBlock(updatedLines)
-
-
-
-    call setpos('.', pos)
 endfunction
 
 function! s:RemoveUnneededImportsFromList(lines)
@@ -479,7 +496,7 @@ function! s:RemoveUnneededImportsFromList(lines)
             let classname = substitute(split(tempString, '\.')[-1], ';', '', '')
             " Always keep * and _ imports.  Also Scala's bracketed imports
             " until I create a better way to verify those
-            if classname ==# "*" || classname ==# "_" || classname =~ "^\{" || s:CountOccurances(classname) > 0
+            if classname ==# "*" || classname ==# "_" || classname =~ "^\{" || s:HasOccurance(classname) > 0
                 call add(updatedLines, substitute(line, '^\(\s\*\)','',''))
             endif
         else
@@ -489,7 +506,6 @@ function! s:RemoveUnneededImportsFromList(lines)
     endfor
     return updatedLines
 endfunction
-
 
 function! s:TrimString(str)
     return substitute(a:str, '^\s*\(.\{-}\)\s*$', '\1', '')
@@ -532,8 +548,7 @@ endfunction
 
 function! VimportLoadImportsFromGradle()
 
-    redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
-    echo "Loading classpath from Gradle..."
+    call s:Echo("Loading classpath from Gradle...")
     call s:VimportCacheGradleClasspath()
     let root = s:VimportFindGradleRoot()
     let list = []
@@ -541,15 +556,14 @@ function! VimportLoadImportsFromGradle()
     for line in readfile(g:vimport_gradle_cache_file)
         if strpart(line, strlen(line)-4) ==# '.jar'
             if has("python")
-                execute 'pyfile ' . pythonScript . '.py'
+                silent execute 'pyfile ' . pythonScript . '.py'
             elseif has("python3")
-                execute 'py3file ' . pythonScript . '.py3'
+                silent execute 'py3file ' . pythonScript . '.py3'
             endif
         endif
     endfor
     call s:SetImportList(root, list)
-    redraw! "Prevent messages from stacking and causing a 'Press Enter..' message
-    echo "Finished loading classpath from Gradle."
+    call s:Echo("Finished loading classpath from Gradle.")
 endfunction
 
 function! s:VimportCacheGradleClasspath()
@@ -557,10 +571,10 @@ function! s:VimportCacheGradleClasspath()
     let root = s:VimportFindGradleRoot()
     if !empty(root)
         let cwd = getcwd()
-        execute 'cd ' . fnameescape(root)
+        silent execute 'cd ' . fnameescape(root)
         let initScript = g:vimport_source_dir . "/data/initgradle.gradle"
         let output = system('gradle -I ' . initScript . ' -PvimportExportFile=' . g:vimport_gradle_cache_file . ' echoClasspath')
-        execute 'cd ' . cwd
+        silent execute 'cd ' . cwd
     endif
 endfunction
 
@@ -588,20 +602,30 @@ function! s:VimportFindGradleRoot()
     return ''
 endfunction
 
+"Redraw before echo to prevent messages from stacking and causing a 'Press Enter..' message
+function! s:Echo(str)
+    redraw!
+    echo a:str
+endfunction
+
 let s:classNames = []
 function! s:AddToMatches(str)
     call add(s:classNames, a:str)
 endfunction
 
 function! VimportImportAll()
+    return s:SearchFromTop("s:VimportImportAllImpl", [])
+endfunction
 
-    let start = search("^import", 'b') + 1 "Don't search the imports for class names
+function! s:VimportImportAllImpl()
+
+    let start = search("^import", 'bwn') + 1 "Don't search the imports for class names
 
     " search for the pattern and call AddToMatches for each match.  /n
     " prevents it from actually doing a replace
     " AddToMatches just populates s:classNames
     let s:classNames = []
-    execute ":keeppatterns " . start . ",$s/\\v[^a-z](([A-Z]+[a-z0-9]+)+)/\\=s:AddToMatches(submatch(1))/gn"
+    silent execute ":keeppatterns " . start . ",$s/\\v[^a-z](([A-Z]+[a-z0-9]+)+)/\\=s:AddToMatches(submatch(1))/gn"
 
     let classNameList = s:classNames
     " Filter duplicates
