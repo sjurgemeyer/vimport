@@ -335,8 +335,11 @@ function! OrganizeImports(remove, sort)
     if (a:sort)
         let lines = s:SortImports(lines)
     endif
+    if (s:GetPackageLineNumberForCurrentFile() > -1)
+        let lines = [''] + lines
+    endif
 
-    let result = s:WriteImportBlock([''] + lines  + [''])
+    let result = s:WriteImportBlock(lines  + [''])
 
 endfunction
 
@@ -426,7 +429,7 @@ function! s:HasOccurance(searchstring)
 endfunction
 
 function! s:HasOccuranceImpl(searchstring)
-    if search(a:searchstring, "Wn") > 0
+    if search(a:searchstring, "Wnc") > 0
         return 1
     endif
     return 0
