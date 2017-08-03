@@ -100,7 +100,7 @@ function! s:DetermineImportForClassName(classToFind, showErrors)
 
     let localFilePaths = s:GetFilePathList(a:classToFind)
     let otherFilePaths = s:FindFileInList(a:classToFind, s:GetAvailableImports())
-    let filePathList = localFilePaths + otherFilePaths
+    let filePathList = s:RemoveDuplicates(localFilePaths + otherFilePaths)
 
     let pathList = []
     for f in filePathList
@@ -282,7 +282,8 @@ function! s:HasExistingImport(importPackage, path)
 endfunction
 
 function! GetCurrentPackage()
-    return GetPackageFromFile(expand("%:p"))
+    let packageDeclaration = s:GetPackageLineForCurrentFile()
+    return s:GetPackageFromDeclaration(packageDeclaration)
 endfunction
 
 function! s:RemoveFileFromPackage(fullpath)
@@ -291,13 +292,25 @@ endfunction
 
 function! GetPackageFromFile(filePath)
     let packageDeclaration = s:GetPackageLine(a:filePath)
-    if packageDeclaration ==# ''
+    return s:GetPackageFromDeclaration(packageDeclaration)
+endfunction
+
+function s:GetPackageFromDeclaration(packageDeclaration)
+    if a:packageDeclaration ==# ''
         return ''
     endif
-    let package = split(packageDeclaration, '\s')[-1]
+    let package = split(a:packageDeclaration, '\s')[-1]
     let package = substitute(package, ';', '', '')
-    return package
 
+    return package
+endfunction
+
+function! s:GetPackageLineForCurrentFile()
+    let line = s:GetPackageLineNumberForCurrentFile()
+    if line == -1
+        return ''
+    endif
+    return getline(line+1)
 endfunction
 
 function! s:GetPackageLine(filePath)
@@ -310,7 +323,11 @@ function! s:GetPackageLine(filePath)
 endfunction
 
 function! s:GetPackageLineNumberForCurrentFile()
-    return s:GetPackageLineNumber(expand("%:p"))
+    " Can't use the other method because it reads from disk and the file may
+    " be modified
+    let lines = getline(1, 20)
+    let val = match(lines, "^package")
+    return val
 endfunction
 
 function! s:GetPackageLineNumber(filePath)
@@ -321,7 +338,13 @@ endfunction
 
 
 function! OrganizeImports(remove, sort)
+    return s:SearchFromTop("s:OrganizeImportsImpl", [a:remove, a:sort])
+endfunction
 
+function! s:OrganizeImportsImpl(remove, sort)
+
+    let foldlevel = &foldlevel
+    :set foldlevel=20
     let lines = GrabImportBlock()
     if lines == []
         " No imports to organize
@@ -339,12 +362,15 @@ function! OrganizeImports(remove, sort)
         let lines = [''] + lines
     endif
 
-    let result = s:WriteImportBlock(lines  + [''])
+    let result = s:WriteImportBlock(lines)
+    execute "set foldlevel=" . foldlevel
+    return result
 
 endfunction
 
 function! s:RemoveDuplicates(list)
-    return filter(copy(a:list), 'index(a:list, v:val, v:key+1)==-1')
+    let list = filter(copy(a:list), 'index(a:list, v:val, v:key+1)==-1')
+    return filter(list, 'v:val != ""')
 endfunction
 
 function! s:VimportAddBlankLines(lines)
@@ -399,10 +425,6 @@ function! s:SearchFromTop(func, args)
 endfunction
 
 function! GrabImportBlock()
-    return s:SearchFromTop("s:GrabImportBlockImpl", [])
-endfunction
-
-function! s:GrabImportBlockImpl()
 
     let start = search("^import", 'cn')
     let end = search("^import", 'bwn')
@@ -576,7 +598,8 @@ function! s:VimportCacheGradleClasspath()
         let cwd = getcwd()
         silent execute 'cd ' . fnameescape(root)
         let initScript = g:vimport_source_dir . "/data/initgradle.gradle"
-        let output = system('gradle -I ' . initScript . ' -PvimportExportFile=' . g:vimport_gradle_cache_file . ' echoClasspath')
+        let cmd = 'gradle -I ' . initScript . ' -PvimportExportFile=' . g:vimport_gradle_cache_file . ' echoClasspath'
+        let output = system(cmd)
         silent execute 'cd ' . cwd
     endif
 endfunction
