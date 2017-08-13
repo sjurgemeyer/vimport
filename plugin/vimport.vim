@@ -578,7 +578,7 @@ function! VimportLoadImportsFromGradle()
     let root = s:VimportFindGradleRoot()
     let list = []
     let pythonScript = g:vimport_source_dir . "/data/createClassList"
-    for line in readfile(g:vimport_gradle_cache_file)
+    for line in readfile(glob(g:vimport_gradle_cache_file))
         if strpart(line, strlen(line)-4) ==# '.jar'
             if has("python")
                 silent execute 'pyfile ' . pythonScript . '.py'
