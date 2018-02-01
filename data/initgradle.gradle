@@ -1,9 +1,16 @@
+
 allprojects {
+
+    def f= new File(project.getProperty('vimportExportFile'))
+    f.text = ''
+
 	task echoClasspath << {
 		def file = new File(project.getProperty('vimportExportFile'))
-		file.text = ''
-		sourceSets.main.runtimeClasspath.each {
-			file << it.toString() + '\n'
-		}
+        if (project.hasProperty('sourceSets')) {
+            sourceSets.main.runtimeClasspath.each {
+                file << it.toString() + '\n'
+            }
+        }
 	}
 }
+
