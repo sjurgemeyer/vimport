@@ -671,7 +671,7 @@ function! s:VimportImportAllImpl()
 
 endfunction
 
-function VimportReloadAllCaches()
+function! VimportReloadAllCaches()
     :call VimportLoadImports(&filetype)
     :call VimportLoadImportsFromGradle()
     :call RefreshFilePathListCache()
