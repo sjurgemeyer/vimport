@@ -359,7 +359,7 @@ function! s:OrganizeImportsImpl(remove, sort)
         let lines = s:SortImports(lines)
     endif
     if (s:GetPackageLineNumberForCurrentFile() > -1)
-        let lines = [''] + lines + ['']
+        let lines = [''] + lines
     endif
 
     let result = s:WriteImportBlock(lines)
